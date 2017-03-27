@@ -1,0 +1,29 @@
+{
+  "name": "odmongo",
+  "version": "0.0.0",
+  "description": "Barebones MongoDB ODM.",
+  "main": "index.js",
+  "scripts": {
+    "build": "buble src -o lib",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/goto-bus-stop/odmongo.git"
+  },
+  "keywords": [
+    "mongodb",
+    "mongo",
+    "client",
+    "odm"
+  ],
+  "author": "Renée Kooi <renee@kooi.me>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/goto-bus-stop/odmongo/issues"
+  },
+  "homepage": "https://github.com/goto-bus-stop/odmongo#readme",
+  "devDependencies": {
+    "buble": "^0.15.2"
+  }
+}
