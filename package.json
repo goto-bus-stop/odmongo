@@ -4,8 +4,10 @@
   "description": "Barebones MongoDB ODM.",
   "main": "index.js",
   "scripts": {
-    "build": "buble src -o lib",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:async": "async-to-gen src --out-dir lib",
+    "build:buble": "buble lib -o lib --no generator",
+    "build": "npm run build:async && npm run build:buble",
+    "test": "tape -r ./test/_setup test/*.js"
   },
   "repository": {
     "type": "git",
@@ -24,6 +26,14 @@
   },
   "homepage": "https://github.com/goto-bus-stop/odmongo#readme",
   "devDependencies": {
-    "buble": "^0.15.2"
+    "async-to-gen": "^1.3.2",
+    "buble": "^0.15.2",
+    "pirates": "^2.1.2",
+    "tape": "^4.6.3"
+  },
+  "dependencies": {
+    "mongodb": "^2.2.25",
+    "pify": "^2.3.0",
+    "snake-case": "^2.1.0"
   }
 }
