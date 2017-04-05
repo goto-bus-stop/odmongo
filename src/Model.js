@@ -69,7 +69,8 @@ class Model {
    * @return {Model}
    */
   static findById (id) {
-    return this.find({ _id: id })
+    return this.getCollection().find({ _id: id })
+      .then((docs) => this.hydrate(docs[0]))
   }
 
   /**
@@ -78,7 +79,14 @@ class Model {
    * @param {object} props
    */
   static find (props) {
-    return this.getConnection().find(props)
+    return this.getCollection().find(props)
+      .then((docs) => docs.map(this.hydrate, this))
+  }
+
+  static hydrate (props) {
+    const model = new this(props)
+    model.isNew = false
+    return model
   }
 }
 
