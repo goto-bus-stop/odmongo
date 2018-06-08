@@ -2,34 +2,42 @@
 
 A barebones MongoDB ODM.
 
+It provides a very small wrapper that you can extend in various places to build
+yourself a nice DB library.
+
+## Usage
+
 ```js
 const joi = require('joi')
-const pify = require('pify')
+const { promisify } = require('util')
 const { Connection, Model } = require('odmongo')
 const { MongoClient } = require('mongodb')
 
-const schema = joi.object({
-  username: joi.string().required()
-})
-
+// Set up a connection instance
 const connection = new Connection({
   client: MongoClient
 })
 
+// Create some Model classes
+const userSchema = joi.object({
+  username: joi.string().required()
+})
 class User extends Model {
   validate () {
-    return pify(joi.validate)(this.fields, schema)
+    return promisify(joi.validate)(this.fields, userSchema)
   }
 }
 User.collection = 'users'
 
+// Register models on the connection instance
 connection.define({ User })
 
-const user = new connection.models.User({
-  username: 'Me'
-})
-
+// Connect!
 connection.connect('mongodb://localhost:27017/my_db').then(() => {
+  const user = new connection.models.User({
+    username: 'Me'
+  })
+
   return user.save().then(() => {
     console.log('saved')
   }).catch((err) => {
@@ -59,10 +67,14 @@ Connect to the DB server. Any arguments are passed to the client factory's
 
 Returns a Promise that resolves once the connection is up.
 
+<a id="connection-define"></a>
 #### `conn.define(models)`
 
 Define models for this connection. This makes models available on the
 `conn.models` property, configured to use this connection.
+
+If your app uses a single global connection instance, you may want to use
+the [`Model.connection`](#model-set-connection) property directly instead.
 
 `models` is an object with model names as keys, and model classes as values.
 
@@ -81,16 +93,17 @@ assert.notOk(new User() instanceof conn.models.User)
 
 #### `conn.models.ModelName`
 
-Get a model that was registered using `conn.define()`.
+Get a model that was registered using [`conn.define()`](#connection-define).
 
 ### `class extends Model {}`
 
 Create a new Model class.
 
+<a id="model-set-connection"></a>
 #### `Model.connection = connection`
 
 Configure the connection instances of this Model will use. If you use
-`conn.define()`, it does this for you.
+[`conn.define()`](#connection-define), it does this for you.
 
 Subclasses default to using their superclass's connection, so to make all models
 use a global Connection instance, you can do:
@@ -109,6 +122,19 @@ ThatOtherModel.connection = someOtherConnection
 
 Set the name of the database collection where this Model's instances are found
 and stored.
+
+```js
+class User extends Model {}
+User.collection = 'users'
+```
+
+You can also define this as a static getter property in your Model subclass:
+
+```js
+class User extends Model {
+  static get collection () { return 'users' }
+}
+```
 
 #### `await Model.find(query)`
 
