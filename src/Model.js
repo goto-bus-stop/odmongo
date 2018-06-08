@@ -1,9 +1,12 @@
 const snakeCase = require('snake-case')
-const defaultConnection = require('./defaultConnection')
+const Connection = require('./Connection')
+
+const kConnection = Symbol('connection')
+const kCollection = Symbol('collection')
 
 class Model {
-  constructor () {
-    this.fields = {}
+  constructor (fields = {}) {
+    this.fields = fields
     this.isNew = true
   }
 
@@ -11,14 +14,14 @@ class Model {
    * Get the connection used by the Model.
    */
   get connection () {
-    return this.constructor.getConnection()
+    return this.constructor.connection
   }
 
   /**
    * Get the MongoDB collection used by the Model.
    */
   get collection () {
-    return this.connection.collection(this.constructor.getCollection())
+    return this.constructor.getCollection()
   }
 
   /**
@@ -38,7 +41,14 @@ class Model {
   async save () {
     await this.validate()
 
-    this.connection
+    if (this.isNew) {
+      await this.collection.insert(this.toJSON())
+    } else {
+      await this.collection.update(
+        { _id: this.fields._id },
+        this.toJSON()
+      )
+    }
   }
 
   /**
@@ -49,17 +59,11 @@ class Model {
   }
 
   /**
-   * Get the connection used by this Model.
-   */
-  static getConnection () {
-    return defaultConnection
-  }
-
-  /**
-   * Get the name of the MongoDB collection used by this Model.
+   * Get the MongoDB collection used by this Model.
    */
   static getCollection () {
-    return this.collection || snakeCase(this.name)
+    const name = this.collection || snakeCase(this.name)
+    return this.connection.collection(name)
   }
 
   /**
@@ -68,9 +72,14 @@ class Model {
    * @param {ObjectId|string} id
    * @return {Model}
    */
-  static findById (id) {
-    return this.getCollection().find({ _id: id })
-      .then((docs) => this.hydrate(docs[0]))
+  static async findById (id) {
+    if (typeof id === 'string') id = { $id: id }
+
+    const docs = await this.getCollection().find({ _id: id })
+    if (docs.length === 0) {
+      throw new Error('Not Found')
+    }
+    return this.hydrate(docs[0])
   }
 
   /**
@@ -80,13 +89,78 @@ class Model {
    */
   static find (props) {
     return this.getCollection().find(props)
-      .then((docs) => docs.map(this.hydrate, this))
+      .then(this.hydrateAll.bind(this))
   }
 
+  /**
+   * Hydrate a JSON document to a model instance.
+   *
+   * @param {object} props
+   */
   static hydrate (props) {
     const model = new this(props)
     model.isNew = false
     return model
+  }
+
+  /**
+   * Hydrate a list of JSON documents to models.
+   *
+   * @param {Array.<object>} documents
+   */
+  static hydrateAll (documents) {
+    return documents.map(this.hydrate, this)
+  }
+
+  /**
+   * Configure the connection to be used by this model.
+   *
+   * @param {Connection} connection
+   */
+  static set connection (connection) {
+    if (!(connection instanceof Connection)) {
+      const name = this.name || 'Model'
+      throw new Error(`odmongo: ${name}.connection must be an instance of Connection.`)
+    }
+    this[kConnection] = connection
+  }
+
+  /**
+   * Get the connection used by this model.
+   */
+  static get connection () {
+    if (!this[kConnection]) {
+      const name = this.name || 'Model'
+      throw new Error(`odmongo: No connection was configured. Do \`${name}.connection = connection\` before using any models.`)
+    }
+    return this[kConnection]
+  }
+
+  /**
+   * Configure the collection to be used by this model.
+   *
+   * @param {string} name
+   */
+  static set collection (name) {
+    if (this === Model) {
+      throw new Error('odmongo: Cannot configure a collection on the base Model class. Instead extend this class, and configure a collection on the subclass.')
+    }
+    if (typeof name !== 'string') {
+      const name = this.name || 'Model'
+      throw new Error(`odmongo: ${name}.collection must be a string.`)
+    }
+    this[kCollection] = name
+  }
+
+  /**
+   * Get the collection used by this model.
+   */
+  static get collection () {
+    if (!this[kCollection]) {
+      const name = this.name || 'Model'
+      throw new Error(`odmongo: No connection was configured. Do \`${name}.connection = connection\` before using any models.`)
+    }
+    return this[kCollection]
   }
 }
 
