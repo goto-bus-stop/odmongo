@@ -40,3 +40,42 @@ test('Model.collection', (t) => {
   t.equal(SubModel.collection, 'sub_collection', 'uses the provided collection name')
   t.equal(TestModel.collection, 'test_collection', 'setting collection on subclass does not affect superclass')
 })
+
+class MockClient {
+  constructor (collections) {
+    this.collections = collections
+  }
+
+  collection (name) {
+    return {
+      find: () => ({
+        toArray: () => Promise.resolve(this.collections[name])
+      })
+    }
+  }
+
+  static connect (data, cb) {
+    cb(null, new MockClient(data))
+  }
+}
+
+test('Model.find', async (t) => {
+  t.plan(4)
+
+  const connection = new Connection({ client: MockClient })
+  await connection.connect({
+    test_collection: [
+      { _id: 1, name: 'hello' }
+    ]
+  })
+
+  class TestModel extends Model {}
+  TestModel.connection = connection
+  TestModel.collection = 'test_collection'
+
+  const result = await TestModel.find()
+  t.ok(Array.isArray(result), 'returns an array')
+  t.equal(result.length, 1, 'found results from test_collection')
+  t.ok(result[0] instanceof TestModel, 'returns model instances')
+  t.equal(result[0].fields._id, 1, 'contains document fields')
+})
