@@ -24,7 +24,9 @@ test('Model.connection', (t) => {
 })
 
 test('Model.collection', (t) => {
-  t.plan(6)
+  t.plan(7)
+
+  t.throws(() => { Model.collection = 'test_collection' }, 'cannot assign a collection to the Model base class')
 
   class TestModel extends Model {}
   t.throws(() => { TestModel.collection = 1234 }, 'cannot assign non-string values')
