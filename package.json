@@ -33,7 +33,6 @@
   },
   "dependencies": {
     "mongodb": "^2.2.25",
-    "pify": "^2.3.0",
-    "snake-case": "^2.1.0"
+    "pify": "^2.3.0"
   }
 }

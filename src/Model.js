@@ -1,4 +1,3 @@
-const snakeCase = require('snake-case')
 const Connection = require('./Connection')
 
 const kConnection = Symbol('connection')
@@ -62,7 +61,7 @@ class Model {
    * Get the MongoDB collection used by this Model.
    */
   static getCollection () {
-    const name = this.collection || snakeCase(this.name)
+    const name = this.collection
     return this.connection.collection(name)
   }
 
