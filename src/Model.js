@@ -155,9 +155,9 @@ class Model {
    * Get the collection used by this model.
    */
   static get collection () {
-    if (!this[kCollection]) {
+    if (!this.hasOwnProperty(kCollection)) {
       const name = this.name || 'Model'
-      throw new Error(`odmongo: No connection was configured. Do \`${name}.connection = connection\` before using any models.`)
+      throw new Error(`odmongo: No collection was configured. Do \`${name}.collection = 'collection_name'\` before using any models.`)
     }
     return this[kCollection]
   }

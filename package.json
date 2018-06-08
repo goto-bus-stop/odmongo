@@ -2,10 +2,10 @@
   "name": "odmongo",
   "version": "0.0.0",
   "description": "Barebones MongoDB ODM.",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "build:async": "async-to-gen src --out-dir lib",
-    "build:buble": "buble lib -o lib --no generator",
+    "build:buble": "buble lib -o lib --no generator --yes dangerousForOf",
     "build": "npm run build:async && npm run build:buble",
     "test": "tape -r ./test/_setup test/*.js"
   },

@@ -9,7 +9,10 @@ function transformAsync (code) {
 
 function transformBuble (code) {
   return buble.transform(code, {
-    transforms: { generator: false }
+    transforms: {
+      generator: false,
+      dangerousForOf: true
+    }
   }).code
 }
 
