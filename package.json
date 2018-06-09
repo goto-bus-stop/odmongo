@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "Barebones MongoDB ODM.",
   "main": "lib/index.js",
+  "module": "index.mjs",
   "scripts": {
     "build:async": "async-to-gen src --out-dir lib",
     "build:buble": "buble lib -o lib --no generator --yes dangerousForOf",
