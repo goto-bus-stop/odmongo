@@ -7,6 +7,7 @@
     "build:async": "async-to-gen src --out-dir lib",
     "build:buble": "buble lib -o lib --no generator --yes dangerousForOf",
     "build": "npm run build:async && npm run build:buble",
+    "prepare": "npm run build",
     "test": "node test"
   },
   "repository": {
@@ -32,7 +33,6 @@
     "tape": "^4.6.3"
   },
   "dependencies": {
-    "mongodb": "^2.2.25",
     "pify": "^2.3.0"
   }
 }

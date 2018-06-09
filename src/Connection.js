@@ -38,8 +38,9 @@ function makeConnectedModel (BaseModel, name, connection) {
   const vm = require('vm')
 
   const Connected = vm.runInNewContext(`
-    return class ${name} extends BaseModel {}
-  `, { BaseModel })
+    class ${name} extends Model {}
+    ${name}
+  `, { Model })
 
   Connected.connection = connection;
   return Connected

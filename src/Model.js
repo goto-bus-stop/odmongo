@@ -52,6 +52,8 @@ class Model {
 
   /**
    * Get the document as a raw JSON object.
+   *
+   * @return {object}
    */
   toJSON () {
     return this.fields
@@ -152,7 +154,7 @@ class Model {
   }
 
   /**
-   * Get the collection used by this model.
+   * Get the collection name used by this model.
    */
   static get collection () {
     if (!this.hasOwnProperty(kCollection)) {
