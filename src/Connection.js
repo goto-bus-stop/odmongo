@@ -1,4 +1,4 @@
-const pify = require('pify')
+const { parse } = require('url')
 const Collection = require('./Collection')
 
 const kConnect = Symbol('client connect function')
@@ -18,8 +18,10 @@ class Connection {
     return this.collections[name]
   }
 
-  async connect () {
-    this.client = await pify(this[kConnect])(...arguments)
+  async connect (url, opts) {
+    this.client = await this[kConnect](url, opts)
+    const { pathname } = parse(url)
+    this.db = this.client.db(pathname.replace(/^\//, ''))
   }
 
   define(classes) {

@@ -33,7 +33,5 @@
     "pirates": "^2.1.2",
     "tape": "^4.6.3"
   },
-  "dependencies": {
-    "pify": "^2.3.0"
-  }
+  "dependencies": {}
 }

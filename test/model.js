@@ -56,8 +56,8 @@ class MockClient {
     }
   }
 
-  static connect (data, cb) {
-    cb(null, new MockClient(data))
+  static connect (data) {
+    return new MockClient(data)
   }
 }
 

@@ -2,7 +2,7 @@ class Collection {
   constructor (connection, name) {
     this.connection = connection
     this.name = name
-    this.collection = connection.client.collection(name)
+    this.collection = connection.db.collection(name)
   }
 
   find (query) {

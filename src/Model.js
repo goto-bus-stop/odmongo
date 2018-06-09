@@ -76,11 +76,11 @@ class Model {
   static async findById (id) {
     if (typeof id === 'string') id = { $id: id }
 
-    const docs = await this.getCollection().find({ _id: id })
-    if (docs.length === 0) {
+    const doc = await this.getCollection().findOne({ _id: id })
+    if (!doc) {
       throw new Error('Not Found')
     }
-    return this.hydrate(docs[0])
+    return this.hydrate(doc)
   }
 
   /**
