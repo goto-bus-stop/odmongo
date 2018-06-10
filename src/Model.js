@@ -1,3 +1,4 @@
+const { ObjectId } = require('mongodb')
 const Connection = require('./Connection')
 
 const kConnection = Symbol('connection')
@@ -74,7 +75,7 @@ class Model {
    * @return {Model}
    */
   static async findById (id) {
-    if (typeof id === 'string') id = { $id: id }
+    if (typeof id === 'string') id = new ObjectId(id)
 
     const doc = await this.getCollection().findOne({ _id: id })
     if (!doc) {

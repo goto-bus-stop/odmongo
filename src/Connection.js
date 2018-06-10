@@ -1,12 +1,14 @@
 const { parse } = require('url')
+const { MongoClient } = require('mongodb')
 
-const kConnect = Symbol('client connect function')
+const kClientFactory = Symbol('client factory')
 
 class Connection {
-  constructor ({ client }) {
+  constructor ({ client, clientFactory } = {}) {
     this.collections = Object.create(null)
     this.models = Object.create(null)
-    this[kConnect] = client.connect
+    this.client = client
+    this[kClientFactory] = clientFactory || MongoClient
   }
 
   collection (name) {
@@ -18,7 +20,9 @@ class Connection {
   }
 
   async connect (url, opts) {
-    this.client = await this[kConnect](url, opts)
+    if (!this.client) {
+      this.client = await this[kClientFactory].connect(url, opts)
+    }
     const { pathname } = parse(url)
     this.db = this.client.db(pathname.replace(/^\//, ''))
   }

@@ -13,13 +13,13 @@ test('Model.connection', (t) => {
   t.throws(() => { TestModel.connection = 1234 }, 'cannot assign non-Connections')
   t.throws(() => { TestModel.connection }, 'cannot get the connection instance if it is not configured')
 
-  TestModel.connection = new Connection({ client: fakeClient })
+  TestModel.connection = new Connection({ clientFactory: fakeClient })
   t.ok(TestModel.connection instanceof Connection, 'uses the provided connection')
 
   class SubModel extends TestModel {}
   t.equal(SubModel.connection, TestModel.connection, 'connection is inherited')
 
-  SubModel.connection = new Connection({ client: fakeClient })
+  SubModel.connection = new Connection({ clientFactory: fakeClient })
   t.notEqual(SubModel.connection, TestModel.connection, 'setting connection on subclass does not affect superclass')
 })
 
@@ -48,10 +48,10 @@ class MockClient {
     this.collections = collections
   }
 
-  collection (name) {
+  db () {
     return {
-      find: () => ({
-        toArray: () => Promise.resolve(this.collections[name])
+      collection: (name) => ({
+        find: () => Promise.resolve(this.collections[name])
       })
     }
   }
@@ -64,12 +64,13 @@ class MockClient {
 test('Model.find', async (t) => {
   t.plan(4)
 
-  const connection = new Connection({ client: MockClient })
-  await connection.connect({
+  const client = new MockClient({
     test_collection: [
       { _id: 1, name: 'hello' }
     ]
   })
+  const connection = new Connection({ client })
+  await connection.connect('mongodb://test/db')
 
   class TestModel extends Model {}
   TestModel.connection = connection
