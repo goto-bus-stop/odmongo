@@ -1,5 +1,4 @@
 const { parse } = require('url')
-const Collection = require('./Collection')
 
 const kConnect = Symbol('client connect function')
 
@@ -12,7 +11,7 @@ class Connection {
 
   collection (name) {
     if (!this.collections[name]) {
-      this.collections[name] = new Collection(this, name)
+      this.collections[name] = this.db.collection(name)
     }
 
     return this.collections[name]

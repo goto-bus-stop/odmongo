@@ -1,14 +1,6 @@
-import odmongo from './lib/index.js'
+import Connection from './lib/Connection.js'
+import Model from './lib/Model.js'
 
-const {
-  Connection,
-  Collection,
-  Model
-} = odmongo
-
-export default odmongo
-export {
-  Connection,
-  Collection,
-  Model
+export default { Connection, Model }
+export { Connection, Model
 }

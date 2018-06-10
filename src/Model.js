@@ -41,7 +41,7 @@ class Model {
     await this.validate()
 
     if (this.isNew) {
-      await this.collection.insert(this.fields)
+      await this.collection.insertOne(this.fields)
     } else {
       await this.collection.update(
         { _id: this.fields._id },
