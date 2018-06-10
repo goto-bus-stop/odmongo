@@ -41,11 +41,11 @@ class Model {
     await this.validate()
 
     if (this.isNew) {
-      await this.collection.insert(this.toJSON())
+      await this.collection.insert(this.fields)
     } else {
       await this.collection.update(
         { _id: this.fields._id },
-        this.toJSON()
+        this.fields
       )
     }
   }
