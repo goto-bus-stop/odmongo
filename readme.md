@@ -9,7 +9,6 @@ yourself a nice DB library.
 
 ```js
 const joi = require('joi')
-const { promisify } = require('util')
 const { Connection, Model } = require('odmongo')
 const { MongoClient } = require('mongodb')
 
@@ -24,7 +23,7 @@ const userSchema = joi.object({
 })
 class User extends Model {
   validate () {
-    return promisify(joi.validate)(this.fields, userSchema)
+    return joi.validate(this.fields, userSchema)
   }
 }
 User.collection = 'users'
@@ -171,9 +170,7 @@ to the ones offered by libraries like Mongoose.
 Use any validation mechanism you like, `joi` is a good one:
 
 ```js
-const { promisify } = require('util')
 const joi = require('joi')
-const validate = promisify(joi.validate)
 
 const schema = joi.object({
   username: joi.string()
@@ -183,7 +180,7 @@ const schema = joi.object({
 
 class User extends Model {
   async validate () {
-    return validate(this.fields, schema, { allowUnknown: true })
+    return joi.validate(this.fields, schema, { allowUnknown: true })
   }
 }
 ```
