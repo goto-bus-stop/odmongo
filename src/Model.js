@@ -92,12 +92,12 @@ class Model {
    * @param {object} props
    */
   static find (props) {
-    return new QueryBuilder(props)
+    return new this.QueryBuilder(props)
       ._model(this)
   }
 
   static aggregate (stages = []) {
-    return new AggregateBuilder(stages)
+    return new this.AggregateBuilder(stages)
       ._model(this)
   }
 
@@ -172,5 +172,8 @@ class Model {
     return this[kCollection]
   }
 }
+
+Model.QueryBuilder = QueryBuilder
+Model.AggregateBuilder = AggregateBuilder
 
 module.exports = Model
