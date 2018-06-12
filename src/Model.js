@@ -1,6 +1,7 @@
 const { ObjectId } = require('mongodb')
 const Connection = require('./Connection')
 const AggregateBuilder = require('./Aggregate')
+const QueryBuilder = require('./Query')
 
 const kConnection = Symbol('connection')
 const kCollection = Symbol('collection')
@@ -91,8 +92,8 @@ class Model {
    * @param {object} props
    */
   static find (props) {
-    return this.getCollection().find(props)
-      .then(this.hydrateAll.bind(this))
+    return new QueryBuilder(props)
+      ._model(this)
   }
 
   static aggregate (stages = []) {

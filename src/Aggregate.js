@@ -72,6 +72,8 @@ module.exports = class AggregateBuilder {
     return new AggregateIterator(cursor)
   }
 
+  // Async iteration
+  // for await (var entry of aggregate)
   [Symbol.asyncIterator] () {
     return this.execute()
   }
@@ -91,15 +93,16 @@ class AggregateIterator {
     this[kNext] = promisify(cursor.next.bind(cursor))
   }
 
+  // Async iteration
   async next () {
     const value = await this[kNext]()
     return { value, done: value === null }
   }
-
   [Symbol.asyncIterator] () {
     return this
   }
 
+  // this is a promise i promise!!
   then (success, fail) {
     const cursor = this[kCursor]
     const toArray = promisify(cursor.toArray.bind(cursor))
