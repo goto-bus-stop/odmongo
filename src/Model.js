@@ -1,7 +1,7 @@
 const { ObjectId } = require('mongodb')
-const Connection = require('./Connection')
-const AggregateBuilder = require('./Aggregate')
-const QueryBuilder = require('./Query')
+const Connection = require('./Connection.js')
+const AggregateBuilder = require('./Aggregate.js')
+const QueryBuilder = require('./Query.js')
 
 const kConnection = Symbol('connection')
 const kCollection = Symbol('collection')
