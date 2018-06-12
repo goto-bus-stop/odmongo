@@ -5,6 +5,10 @@ const kModel = Symbol('model')
 const kCursor = Symbol('cursor')
 const kNext = Symbol('get next result')
 
+function toJSON () {
+  return obj.toJSON ? obj.toJSON() : obj
+}
+
 module.exports = class AggregateBuilder {
   constructor (stages = []) {
     this[kStages] = stages
@@ -37,7 +41,7 @@ module.exports = class AggregateBuilder {
 
   match (query) {
     if (typeof query !== 'object') throw new Error('odmongo.aggregate.match: must be a query object')
-    return this.push({ $match: query })
+    return this.push({ $match: toJSON(query) })
   }
 
   project (projection) {
