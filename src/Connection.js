@@ -47,6 +47,7 @@ function makeConnectedModel (BaseModel, name, connection) {
     ${name}
   `, { Model })
 
-  Connected.connection = connection;
+  Connected.connection = connection
+  Connected.collection = BaseModel.collection
   return Connected
 }
