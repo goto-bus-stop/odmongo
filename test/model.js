@@ -1,6 +1,8 @@
 const test = require('tape')
-const Connection = require('../src/Connection')
-const Model = require('../src/Model')
+const Connection = require('../src/Connection.js')
+const Model = require('../src/Model.js')
+const MockClient = require('./mocks/Client.js')
+const MockCursor = require('./mocks/Cursor.js')
 
 const fakeClient = {
   connect () {}
@@ -42,24 +44,6 @@ test('Model.collection', (t) => {
   t.equal(SubModel.collection, 'sub_collection', 'uses the provided collection name')
   t.equal(TestModel.collection, 'test_collection', 'setting collection on subclass does not affect superclass')
 })
-
-class MockClient {
-  constructor (collections) {
-    this.collections = collections
-  }
-
-  db () {
-    return {
-      collection: (name) => ({
-        find: () => Promise.resolve(this.collections[name])
-      })
-    }
-  }
-
-  static connect (data) {
-    return new MockClient(data)
-  }
-}
 
 test('Model.find', async (t) => {
   t.plan(4)
