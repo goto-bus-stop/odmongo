@@ -2,7 +2,7 @@
   "name": "odmongo",
   "version": "0.0.0",
   "description": "Barebones MongoDB ODM.",
-  "main": "index.js",
+  "main": "index",
   "module": "index.mjs",
   "scripts": {
     "build:async": "async-to-gen src --out-dir lib",
