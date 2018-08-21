@@ -99,6 +99,10 @@ class QueryIterator {
     this[kNext] = promisify(cursor.next.bind(cursor))
   }
 
+  unwrap () {
+    return this[kCursor]
+  }
+
   // Async iteration
   async next () {
     const value = await this[kNext]()
