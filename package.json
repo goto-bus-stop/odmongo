@@ -6,7 +6,7 @@
   "module": "index.mjs",
   "scripts": {
     "build:async": "async-to-gen src --out-dir lib",
-    "build:buble": "buble lib -o lib --no generator --yes dangerousForOf",
+    "build:buble": "buble lib -o lib --target node:4 --no generator --yes dangerousForOf",
     "build": "npm run build:async && npm run build:buble",
     "prepare": "npm run build",
     "test": "node test"
