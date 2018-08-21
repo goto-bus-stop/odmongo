@@ -6,6 +6,8 @@ const kCursor = Symbol('cursor')
 const kNext = Symbol('get next result')
 const kFields = Symbol('select fields')
 
+const kAsyncIterator = Symbol.asyncIterator
+
 const merge = Object.assign
 
 function toJSON (obj) {
@@ -79,7 +81,7 @@ module.exports = class QueryBuilder {
 
   // Async iteration
   // for await (var entry of aggregate)
-  [Symbol.asyncIterator] () {
+  [kAsyncIterator] () {
     return this.execute()
   }
 
@@ -111,7 +113,7 @@ class QueryIterator {
       done: value === null
     }
   }
-  [Symbol.asyncIterator] () {
+  [kAsyncIterator] () {
     return this
   }
 

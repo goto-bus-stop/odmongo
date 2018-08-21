@@ -5,6 +5,8 @@ const kModel = Symbol('model')
 const kCursor = Symbol('cursor')
 const kNext = Symbol('get next result')
 
+const kAsyncIterator = Symbol.asyncIterator
+
 function toJSON () {
   return obj.toJSON ? obj.toJSON() : obj
 }
@@ -78,7 +80,7 @@ module.exports = class AggregateBuilder {
 
   // Async iteration
   // for await (var entry of aggregate)
-  [Symbol.asyncIterator] () {
+  [kAsyncIterator] () {
     return this.execute()
   }
 
@@ -106,7 +108,7 @@ class AggregateIterator {
     const value = await this[kNext]()
     return { value, done: value === null }
   }
-  [Symbol.asyncIterator] () {
+  [kAsyncIterator] () {
     return this
   }
 
