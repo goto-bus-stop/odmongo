@@ -1,2 +1,2 @@
-exports.Connection = require('./lib/Connection.js')
-exports.Model = require('./lib/Model.js')
+exports.Connection = require('./src/Connection.js')
+exports.Model = require('./src/Model.js')

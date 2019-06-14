@@ -1,5 +1,5 @@
-import Connection from './lib/Connection.js'
-import Model from './lib/Model.js'
+import Connection from './src/Connection.js'
+import Model from './src/Model.js'
 
 export default { Connection, Model }
 export { Connection, Model }
