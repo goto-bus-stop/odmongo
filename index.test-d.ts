@@ -147,3 +147,63 @@ async function aggregation () {
     }
   }
 }
+
+async function fancyAggregatePipeline () {
+  type PlaylistProps = {
+    _id: string,
+    media: string[],
+  };
+  type PlaylistItemProps = {
+    _id: string,
+    media: string,
+    artist: string,
+    title: string,
+  };
+  type MediaProps = {
+    _id: string,
+  };
+  class Playlist extends Model<PlaylistProps> {}
+  class PlaylistItem extends Model<PlaylistItemProps> {}
+  class Media extends Model<MediaProps> {}
+
+  const result = await Playlist.aggregate()
+    .match({ _id: 'a-playlist-id' })
+    .limit(1)
+    .lookup({
+      from: PlaylistItem,
+      localField: 'media',
+      foreignField: '_id',
+      as: 'items'
+    })
+    // .project({ _id: 0, items: 1 })
+    .unwind('items')
+    .replaceRoot('items')
+    .match({
+      $or: [
+        { artist: 'test' },
+        { title: 'test' },
+      ]
+    })
+    .facet({
+      count: (input) => input.count('filtered'),
+      items: (input) => input
+        .skip(50)
+        .limit(50)
+        .lookup({
+          from: Media,
+          localField: 'media',
+          foreignField: '_id',
+          as: 'media'
+        })
+        .unwind('media')
+    })
+
+  expectType<number>(result[0].count[0].filtered)
+
+  const firstItem: {
+    _id: string,
+    artist: string,
+    title: string,
+    media: { _id: string },
+  } = result[0].items[0];
+}
