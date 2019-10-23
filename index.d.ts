@@ -70,22 +70,42 @@ export class Model<TSchema = DefaultSchema> {
   static AggregateBuilder: typeof AggregateBuilder;
 }
 
-type CountSchema<F extends string> = { [key in F]: number }
+// Apply a $count aggregation stage on the type level.
+type ApplyCount<F extends string> = { [key in F]: number }
 
-// TODO AggregateBuilder should not return model instances, probably?
-export class AggregateBuilder<TResult extends Model> implements AsyncIterable<TResult> {
+interface AddFieldsOptions { [key: string]: any; }
+// Apply an $addFields aggregation stage on the type level.
+type ApplyFields<Base, Fields extends AddFieldsOptions> = Base & { [F in keyof Fields]: any };
+
+interface FacetOptions<Input extends object> {
+  [key: string]: (input: AggregateBuilder<Input>) => any
+    | AggregateBuilder<Input> // not sure if this should be allowed in typescript
+    | PlainObject[];
+}
+// Apply a $facet aggregation stage on the type level.
+type ApplyFacet<Input extends object, Facets extends FacetOptions<Input>> = {
+  [F in keyof Facets]:
+    Facets[F] extends AggregateBuilder<infer Output>
+      ? Output[]
+    : Facets[F] extends (input: AggregateBuilder<Input>) => AggregateBuilder<infer Output>
+      ? Output[]
+    : object[];
+};
+
+export class AggregateBuilder<TResult extends object> implements AsyncIterable<TResult> {
   constructor(stages: object[]);
-  _model<TNewResult extends Model>(model: TNewResult): AggregateBuilder<TNewResult>;
-  push(stage: object): AggregateBuilder<Model<DefaultSchema>>;
-  count<F extends string>(fieldName: F): AggregateBuilder<Model<CountSchema<F>>>;
+  push<TNewResult extends object = PlainObject>(stage: object): AggregateBuilder<TNewResult>;
+  addFields<TFields extends AddFieldsOptions>(fields: TFields): AggregateBuilder<ApplyFields<TResult, TFields>>;
+  count<F extends string>(fieldName: F): AggregateBuilder<ApplyCount<F>>;
   group(fields: object): this;
   limit(n: number): this;
-  match(query: QueryBuilder<TResult> | object): this;
-  project(projection: object): this;
+  match(query: QueryBuilder<Model<TResult>> | object): this;
+  project(projection: object): AggregateBuilder<object>; // TODO can we determine this in some cases?
   skip(n: number): this;
   sort(fields: object): this;
   unwind<F extends string>(fieldName: F): this; // TODO flatten the unwinded field type
   unwind(spec: object): this;
+  facet<TFacets extends FacetOptions<TResult>>(facets: TFacets): AggregateBuilder<ApplyFacet<TResult, TFacets>>;
   toJSON(): object[];
   execute(options?: mongodb.CollectionAggregationOptions): AggregateIterator<TResult>;
   [Symbol.asyncIterator](): AggregateIterator<TResult>;
@@ -94,7 +114,7 @@ export class AggregateBuilder<TResult extends Model> implements AsyncIterable<TR
   catch<TOk>(fail: (err: Error) => Promise<TOk> | TOk): Promise<TOk | TResult[]>;
 }
 
-export class AggregateIterator<TResult extends Model> implements AsyncIterator<TResult> {
+export class AggregateIterator<TResult extends object> implements AsyncIterator<TResult> {
   unwrap(): mongodb.AggregationCursor;
 
   next(): Promise<IteratorResult<TResult>>;
