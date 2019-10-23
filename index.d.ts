@@ -138,6 +138,12 @@ type ApplySimpleLookup<
     : PlainObject[]
 };
 
+type ApplyUnwind<Input extends object, Field extends keyof Input> = Omit<Input, Field> & {
+  [key in Field]: Input[key] extends (infer Element)[]
+    ? Element
+    : Input[key]
+};
+
 export class AggregateBuilder<TResult extends object> implements AsyncIterable<TResult> {
   constructor(stages: object[]);
   push<TNewResult extends object = PlainObject>(stage: object): AggregateBuilder<TNewResult>;
@@ -149,12 +155,13 @@ export class AggregateBuilder<TResult extends object> implements AsyncIterable<T
   project(projection: object): AggregateBuilder<object>; // TODO can we determine this in some cases?
   skip(n: number): this;
   sort(fields: object): this;
-  unwind<F extends string>(fieldName: F): this; // TODO flatten the unwinded field type
+  unwind<F extends keyof TResult>(fieldName: F): AggregateBuilder<ApplyUnwind<TResult, F>>;
   unwind(spec: object): this;
   facet<TFacets extends FacetOptions<TResult>>(facets: TFacets): AggregateBuilder<ApplyFacet<TResult, TFacets>>;
   // TODO return type for PipelineLookupOptions
   lookup<From extends LookupFrom, F extends string>(spec: LookupOptions<TResult, From, F>): AggregateBuilder<ApplySimpleLookup<TResult, From, F>>;
   // lookup(spec: object): this;
+  replaceRoot<F extends keyof TResult>(fieldName: F): AggregateBuilder<TResult[F] extends object ? TResult[F] : any>;
   toJSON(): object[];
   execute(options?: mongodb.CollectionAggregationOptions): AggregateIterator<TResult>;
   [Symbol.asyncIterator](): AggregateIterator<TResult>;
