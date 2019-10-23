@@ -39,11 +39,11 @@ async function main () {
   // aggregate().count() sets the result type
   const [countResult] = await ConnectedUser.aggregate()
     .count('total')
-  expectType<{ total: number }>(countResult.fields)
+  expectType<{ total: number }>(countResult)
   const someString = Math.random().toString()
   // unknown field name
   const [unknownCountResult] = await ConnectedUser.aggregate().count(someString)
-  expectType<{ [n: string]: number }>(unknownCountResult.fields)
+  expectType<{ [n: string]: number }>(unknownCountResult)
 
   // Query builder typings
   await ConnectedUser.find()
@@ -75,4 +75,15 @@ async function main () {
 
   expectError(connection.models.User.hydrate({ whatever: 'lol' }))
   expectType<User>(connection.models.User.hydrate({ username: 'lol' }))
+
+  {
+    const query = ConnectedUser.find()
+      .eq('username', 'test')
+    let [{ count, filter }] = await ConnectedUser.aggregate().facet({
+      count: (input) => input.count('total'),
+      filter: (input) => input.match(query)
+    })
+    expectType<{total: number}>(count[0])
+    expectType<User[]>(filter)
+  }
 }
