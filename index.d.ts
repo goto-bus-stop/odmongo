@@ -16,7 +16,10 @@ interface ModelStatic {
   new(fields?: any): any;
 }
 
-export interface ModelBag {
+// `ModelFields<User>` is the type of `User#fields`.
+type ModelFields<T extends ModelStatic> = InstanceType<T>["fields"];
+
+interface ModelBag {
   [name: string]: any;
 }
 
@@ -31,10 +34,10 @@ export class Connection<TModels extends ModelBag = { [name: string]: typeof Mode
   define(models: Partial<TModels>): void;
 }
 
-export class Model<TSchema = DefaultSchema> {
-  public fields: TSchema;
+export class Model<TFields = DefaultSchema> {
+  public fields: TFields;
 
-  constructor(fields?: TSchema);
+  constructor(fields?: TFields);
 
   /**
    *
@@ -56,10 +59,10 @@ export class Model<TSchema = DefaultSchema> {
   // TModelClass can be _any_ class type in theory, but since it's inferred from the `this` type,
   // it will be a model class in all typical uses.
   static findById<TModelClass extends ModelStatic>(this: TModelClass, id: ObjectId): Promise<InstanceType<TModelClass>>;
-  static find<TModelClass extends ModelStatic>(this: TModelClass, query?: object): QueryBuilder<InstanceType<TModelClass>>;
-  static aggregate<TModelClass extends ModelStatic>(this: TModelClass, stages?: object[]): AggregateBuilder<InstanceType<TModelClass>["fields"]>;
-  static hydrate<TModelClass extends ModelStatic>(this: TModelClass, fields: InstanceType<TModelClass>["fields"]): InstanceType<TModelClass>;
-  static hydrateAll<TModelClass extends ModelStatic>(this: TModelClass, documents: InstanceType<TModelClass>["fields"][]): InstanceType<TModelClass>[];
+  static find<TModelClass extends ModelStatic>(this: TModelClass, query?: PlainObject): QueryBuilder<InstanceType<TModelClass>>;
+  static aggregate<TModelClass extends ModelStatic>(this: TModelClass, stages?: PlainObject[]): AggregateBuilder<ModelFields<TModelClass>>;
+  static hydrate<TModelClass extends ModelStatic>(this: TModelClass, fields: ModelFields<TModelClass>): InstanceType<TModelClass>;
+  static hydrateAll<TModelClass extends ModelStatic>(this: TModelClass, documents: ModelFields<TModelClass>[]): InstanceType<TModelClass>[];
 
   static set connection(Connection);
   static get connection(): Connection;
@@ -70,16 +73,21 @@ export class Model<TSchema = DefaultSchema> {
   static AggregateBuilder: typeof AggregateBuilder;
 }
 
-// Apply a $count aggregation stage on the type level.
-type ApplyCount<OutputName extends string> = { [key in OutputName]: number }
+// Aggregation argument and result types:
 
 interface AddFieldsOptions { [key: string]: any; }
 // Apply an $addFields aggregation stage on the type level.
 type ApplyFields<Base, Fields extends AddFieldsOptions> = Base & { [F in keyof Fields]: any };
 
+// Apply a $count aggregation stage on the type level.
+// Replaces the result type by `{ $OutputName: number }`.
+type ApplyCount<OutputName extends string> = {
+  [key in OutputName]: number
+}
+
 interface FacetOptions<Input extends object> {
   [key: string]: ((input: AggregateBuilder<Input>) => any)
-    | AggregateBuilder<Input> // not sure if this should be allowed in typescript
+    | AggregateBuilder<any> // not sure if this should be allowed in typescript
     | PlainObject[];
 }
 // Apply a $facet aggregation stage on the type level.
@@ -104,7 +112,7 @@ type SimpleLookupOptions<
   as: OutputName,
   localField: keyof Input,
   foreignField: JoinCollection extends ModelStatic
-    ? keyof InstanceType<JoinCollection>["fields"]
+    ? keyof ModelFields<JoinCollection>
     : string
 };
 // type restrictions for a pipeline lookup ({let, pipeline})
@@ -134,7 +142,7 @@ type ApplySimpleLookup<
   OutputName extends string
 > = Input & {
   [key in OutputName]: JoinCollection extends ModelStatic
-    ? InstanceType<JoinCollection>["fields"][]
+    ? ModelFields<JoinCollection>[]
     : PlainObject[]
 };
 
@@ -144,25 +152,37 @@ type ApplyUnwind<Input extends object, Field extends keyof Input> = Omit<Input, 
     : Input[key]
 };
 
+type ProjectOptions<Input extends object> = {
+  [Field in keyof Input]?: 0 | 1
+}
+type ApplyProjection<Input extends object, Projection extends ProjectOptions<Input>> = {
+  [Field in keyof Input]:
+    Projection[Field] extends 0
+      ? never
+    : Projection[Field] extends 1
+      ? Input[Field]
+    : Input[Field] | undefined
+}
+
 export class AggregateBuilder<TResult extends object> implements AsyncIterable<TResult> {
-  constructor(stages: object[]);
+  constructor(stages: PlainObject[]);
   push<TNewResult extends object = PlainObject>(stage: object): AggregateBuilder<TNewResult>;
   addFields<TFields extends AddFieldsOptions>(fields: TFields): AggregateBuilder<ApplyFields<TResult, TFields>>;
   count<F extends string>(fieldName: F): AggregateBuilder<ApplyCount<F>>;
   group(fields: object): this;
-  limit(n: number): this;
   match(query: QueryBuilder<Model<TResult>> | object): this;
-  project(projection: object): AggregateBuilder<object>; // TODO can we determine this in some cases?
+  project<TProjection extends ProjectOptions<TResult>>(projection: TProjection): AggregateBuilder<ApplyProjection<TResult, TProjection>>; // TODO can we determine this in some cases?
   skip(n: number): this;
+  limit(n: number): this;
   sort(fields: object): this;
-  unwind<F extends keyof TResult>(fieldName: F): AggregateBuilder<ApplyUnwind<TResult, F>>;
-  unwind(spec: object): this;
+  unwind<F extends keyof TResult>(fieldName: F, options?: { includeArrayIndex?: string, preserveNullAndEmptyArrays?: boolean }): AggregateBuilder<ApplyUnwind<TResult, F>>;
+  unwind(spec: { path: string, includeArrayIndex: string, preserveNullAndEmptyArrays: boolean }): AggregateBuilder<object>;
   facet<TFacets extends FacetOptions<TResult>>(facets: TFacets): AggregateBuilder<ApplyFacet<TResult, TFacets>>;
   // TODO return type for PipelineLookupOptions
   lookup<From extends LookupFrom, F extends string>(spec: LookupOptions<TResult, From, F>): AggregateBuilder<ApplySimpleLookup<TResult, From, F>>;
   // lookup(spec: object): this;
-  replaceRoot<F extends keyof TResult>(fieldName: F): AggregateBuilder<TResult[F] extends object ? TResult[F] : any>;
-  toJSON(): object[];
+  replaceRoot<F extends keyof TResult>(fieldName: F): AggregateBuilder<TResult[F] extends object ? TResult[F] : object>;
+  toJSON(): PlainObject[];
   execute(options?: mongodb.CollectionAggregationOptions): AggregateIterator<TResult>;
   [Symbol.asyncIterator](): AggregateIterator<TResult>;
 
