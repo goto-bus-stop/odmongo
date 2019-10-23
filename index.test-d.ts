@@ -2,48 +2,47 @@ import { expectError, expectType } from 'tsd'
 import * as joi from '@hapi/joi'
 import { Connection, Model } from '.'
 
-async function main () {
-  type Models = { User: typeof User };
+type Models = { User: typeof User, Playlist: typeof Playlist };
 
-  // Set up a connection instance
-  const connection = new Connection<Models>()
+// Set up a connection instance
+const connection = new Connection<Models>()
 
-  // Create some Model classes
-  type UserProps = { username: string }
-  class User extends Model<UserProps> {
-    static schema = joi.object({
-      username: joi.string().required()
-    })
+// Create some Model classes
+type UserProps = { username: string }
+class User extends Model<UserProps> {
+  static schema = joi.object({
+    username: joi.string().required()
+  })
 
-    async validate () {
-      await User.schema.validateAsync(this.fields)
-    }
+  async validate () {
+    expectType<UserProps>(this.fields)
+    await User.schema.validateAsync(this.fields)
   }
-  User.collection = 'users'
+}
+User.collection = 'users'
 
-  // Register models on the connection instance
-  connection.define({ User })
+type PlaylistProps = { name: string, owner: string };
+class Playlist extends Model<PlaylistProps> {}
+Playlist.collection = 'playlists'
 
-  const ConnectedUser = connection.models.User
+// Register models on the connection instance
+connection.define({ User, Playlist })
 
-  // Connect!
+const ConnectedUser = connection.models.User
+const ConnectedPlaylist = connection.models.Playlist
+
+// Connect!
+async function connect () {
   await connection.connect('mongodb://localhost:27017/my_db')
+}
 
+async function queries () {
   // Query existing documents
   for await (const user of ConnectedUser.find()) {
     console.log(user.fields.username)
     expectType<UserProps>(user.fields)
     expectError(user.fields.whatever)
   }
-
-  // aggregate().count() sets the result type
-  const [countResult] = await ConnectedUser.aggregate()
-    .count('total')
-  expectType<{ total: number }>(countResult)
-  const someString = Math.random().toString()
-  // unknown field name
-  const [unknownCountResult] = await ConnectedUser.aggregate().count(someString)
-  expectType<{ [n: string]: number }>(unknownCountResult)
 
   // Query builder typings
   await ConnectedUser.find()
@@ -61,7 +60,9 @@ async function main () {
     { username: 'myname' },
     { whatever: { $neq: 'myname' } }
   ])
+}
 
+async function creation () {
   // Create new documents
   const user = new ConnectedUser({
     username: 'Me'
@@ -75,15 +76,74 @@ async function main () {
 
   expectError(connection.models.User.hydrate({ whatever: 'lol' }))
   expectType<User>(connection.models.User.hydrate({ username: 'lol' }))
+}
 
-  {
+async function aggregation () {
+  async function countStage () {
+    // aggregate().count() sets the result type
+    const [countResult] = await ConnectedUser.aggregate()
+      .count('total')
+    expectType<{ total: number }>(countResult)
+
+    // unknown field name
+    const someString = Math.random().toString()
+    const [unknownCountResult] = await ConnectedUser.aggregate().count(someString)
+    expectType<{ [n: string]: number }>(unknownCountResult)
+  }
+
+  async function facetStage () {
     const query = ConnectedUser.find()
       .eq('username', 'test')
-    let [{ count, filter }] = await ConnectedUser.aggregate().facet({
+    let [{ count, filter, rawPipeline }] = await ConnectedUser.aggregate().facet({
       count: (input) => input.count('total'),
-      filter: (input) => input.match(query)
+      filter: (input) => input.match(query),
+      rawPipeline: [{ $skip: 100 }]
     })
     expectType<{total: number}>(count[0])
-    expectType<User[]>(filter)
+    expectType<UserProps[]>(filter)
+    expectType<{ [key: string]: any }[]>(rawPipeline)
+  }
+
+  async function lookupStage () {
+    {
+      const result = await ConnectedUser.aggregate().lookup({
+        from: ConnectedPlaylist,
+        localField: 'username',
+        foreignField: 'owner',
+        as: 'playlists'
+      })
+      expectType<string>(result[0].username)
+      expectType<PlaylistProps[]>(result[0].playlists)
+      expectError(result[0].somethingElse)
+    }
+
+    // Errors if `localField` does not exist in the pipeline
+    expectError(await ConnectedUser.aggregate().lookup({
+      from: ConnectedPlaylist,
+      localField: 'whatever',
+      foreignField: 'owner',
+      as: 'playlists'
+    }))
+
+    // Errors if `foreignField` is not supported by the `from` Model
+    expectError(await ConnectedUser.aggregate().lookup({
+      from: ConnectedPlaylist,
+      localField: 'username',
+      foreignField: 'not_a_playlist_field',
+      as: 'playlists'
+    }))
+
+    {
+      // Cannot do the `foreignField` checks if `from` is a string
+      const result = await ConnectedUser.aggregate().lookup({
+        from: 'playlists',
+        localField: 'username',
+        foreignField: 'not_a_playlist_field',
+        as: 'playlists'
+      })
+      expectType<string>(result[0].username)
+      expectType<{ [key: string]: any }[]>(result[0].playlists)
+      expectError(result[0].somethingElse)
+    }
   }
 }
