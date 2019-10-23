@@ -175,7 +175,7 @@ async function fancyAggregatePipeline () {
       foreignField: '_id',
       as: 'items'
     })
-    // .project({ _id: 0, items: 1 })
+    .project({ _id: 0, items: 1 })
     .unwind('items')
     .replaceRoot('items')
     .match({
