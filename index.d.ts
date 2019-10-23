@@ -57,7 +57,7 @@ export class Model<TSchema = DefaultSchema> {
   // it will be a model class in all typical uses.
   static findById<TModelClass extends ModelStatic>(this: TModelClass, id: ObjectId): Promise<InstanceType<TModelClass>>;
   static find<TModelClass extends ModelStatic>(this: TModelClass, query?: object): QueryBuilder<InstanceType<TModelClass>>;
-  static aggregate<TModelClass extends ModelStatic>(this: TModelClass, stages?: object[]): AggregateBuilder<InstanceType<TModelClass>>;
+  static aggregate<TModelClass extends ModelStatic>(this: TModelClass, stages?: object[]): AggregateBuilder<InstanceType<TModelClass>["fields"]>;
   static hydrate<TModelClass extends ModelStatic>(this: TModelClass, fields: InstanceType<TModelClass>["fields"]): InstanceType<TModelClass>;
   static hydrateAll<TModelClass extends ModelStatic>(this: TModelClass, documents: InstanceType<TModelClass>["fields"][]): InstanceType<TModelClass>[];
 
@@ -71,14 +71,14 @@ export class Model<TSchema = DefaultSchema> {
 }
 
 // Apply a $count aggregation stage on the type level.
-type ApplyCount<F extends string> = { [key in F]: number }
+type ApplyCount<OutputName extends string> = { [key in OutputName]: number }
 
 interface AddFieldsOptions { [key: string]: any; }
 // Apply an $addFields aggregation stage on the type level.
 type ApplyFields<Base, Fields extends AddFieldsOptions> = Base & { [F in keyof Fields]: any };
 
 interface FacetOptions<Input extends object> {
-  [key: string]: (input: AggregateBuilder<Input>) => any
+  [key: string]: ((input: AggregateBuilder<Input>) => any)
     | AggregateBuilder<Input> // not sure if this should be allowed in typescript
     | PlainObject[];
 }
@@ -89,7 +89,53 @@ type ApplyFacet<Input extends object, Facets extends FacetOptions<Input>> = {
       ? Output[]
     : Facets[F] extends (input: AggregateBuilder<Input>) => AggregateBuilder<infer Output>
       ? Output[]
-    : object[];
+    : PlainObject[];
+};
+
+// Source collection for a $lookup
+type LookupFrom = string | ModelStatic;
+// type restrictions for a simple lookup ({localField, foreignField})
+type SimpleLookupOptions<
+  Input extends object,
+  JoinCollection extends LookupFrom,
+  OutputName extends string
+> = {
+  from: JoinCollection,
+  as: OutputName,
+  localField: keyof Input,
+  foreignField: JoinCollection extends ModelStatic
+    ? keyof InstanceType<JoinCollection>["fields"]
+    : string
+};
+// type restrictions for a pipeline lookup ({let, pipeline})
+type PipelineLookupOptions<
+  Input extends object,
+  JoinCollection extends LookupFrom,
+  OutputName extends string
+> = {
+  from: JoinCollection,
+  as: OutputName,
+  let: object,
+  // TODO accept `pipeline: (input) => input.etc()`?
+  pipeline: JoinCollection extends ModelStatic
+    ? PlainObject[]
+    : PlainObject[],
+};
+
+type LookupOptions<
+  Input extends object,
+  JoinCollection extends LookupFrom,
+  OutputName extends string
+> = SimpleLookupOptions<Input, JoinCollection, OutputName> | PipelineLookupOptions<Input, JoinCollection, OutputName>;
+
+type ApplySimpleLookup<
+  Input extends object,
+  JoinCollection extends LookupFrom,
+  OutputName extends string
+> = Input & {
+  [key in OutputName]: JoinCollection extends ModelStatic
+    ? InstanceType<JoinCollection>["fields"][]
+    : PlainObject[]
 };
 
 export class AggregateBuilder<TResult extends object> implements AsyncIterable<TResult> {
@@ -106,6 +152,9 @@ export class AggregateBuilder<TResult extends object> implements AsyncIterable<T
   unwind<F extends string>(fieldName: F): this; // TODO flatten the unwinded field type
   unwind(spec: object): this;
   facet<TFacets extends FacetOptions<TResult>>(facets: TFacets): AggregateBuilder<ApplyFacet<TResult, TFacets>>;
+  // TODO return type for PipelineLookupOptions
+  lookup<From extends LookupFrom, F extends string>(spec: LookupOptions<TResult, From, F>): AggregateBuilder<ApplySimpleLookup<TResult, From, F>>;
+  // lookup(spec: object): this;
   toJSON(): object[];
   execute(options?: mongodb.CollectionAggregationOptions): AggregateIterator<TResult>;
   [Symbol.asyncIterator](): AggregateIterator<TResult>;
