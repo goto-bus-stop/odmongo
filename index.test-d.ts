@@ -2,7 +2,7 @@ import { expectError, expectType } from 'tsd'
 import * as joi from '@hapi/joi'
 import { Connection, Model } from '.'
 
-type Models = { User: typeof User, Playlist: typeof Playlist };
+type Models = { User: typeof User; Playlist: typeof Playlist }
 
 // Set up a connection instance
 const connection = new Connection<Models>()
@@ -14,14 +14,14 @@ class User extends Model<UserProps> {
     username: joi.string().required()
   })
 
-  async validate () {
+  async validate() {
     expectType<UserProps>(this.fields)
     await User.schema.validateAsync(this.fields)
   }
 }
 User.collection = 'users'
 
-type PlaylistProps = { name: string, owner: string };
+type PlaylistProps = { name: string; owner: string }
 class Playlist extends Model<PlaylistProps> {}
 Playlist.collection = 'playlists'
 
@@ -45,11 +45,9 @@ async function queries () {
   }
 
   // Query builder typings
-  await ConnectedUser.find()
-    .eq('username', 'myname')
+  await ConnectedUser.find().eq('username', 'myname')
 
-  expectError(await ConnectedUser.find()
-    .eq('whatever', 'myname'))
+  expectError(await ConnectedUser.find().eq('whatever', 'myname'))
 
   // TODO maybe this can be done in the future too
   await ConnectedUser.find().and([
@@ -81,25 +79,27 @@ async function creation () {
 async function aggregation () {
   async function countStage () {
     // aggregate().count() sets the result type
-    const [countResult] = await ConnectedUser.aggregate()
-      .count('total')
+    const [countResult] = await ConnectedUser.aggregate().count('total')
     expectType<{ total: number }>(countResult)
 
     // unknown field name
     const someString = Math.random().toString()
-    const [unknownCountResult] = await ConnectedUser.aggregate().count(someString)
+    const [unknownCountResult] = await ConnectedUser.aggregate().count(
+      someString
+    )
     expectType<{ [n: string]: number }>(unknownCountResult)
   }
 
   async function facetStage () {
-    const query = ConnectedUser.find()
-      .eq('username', 'test')
-    let [{ count, filter, rawPipeline }] = await ConnectedUser.aggregate().facet({
-      count: (input) => input.count('total'),
-      filter: (input) => input.match(query),
+    const query = ConnectedUser.find().eq('username', 'test')
+    let [
+      { count, filter, rawPipeline }
+    ] = await ConnectedUser.aggregate().facet({
+      count: input => input.count('total'),
+      filter: input => input.match(query),
       rawPipeline: [{ $skip: 100 }]
     })
-    expectType<{total: number}>(count[0])
+    expectType<{ total: number }>(count[0])
     expectType<UserProps[]>(filter)
     expectType<{ [key: string]: any }[]>(rawPipeline)
   }
@@ -118,20 +118,24 @@ async function aggregation () {
     }
 
     // Errors if `localField` does not exist in the pipeline
-    expectError(await ConnectedUser.aggregate().lookup({
-      from: ConnectedPlaylist,
-      localField: 'whatever',
-      foreignField: 'owner',
-      as: 'playlists'
-    }))
+    expectError(
+      await ConnectedUser.aggregate().lookup({
+        from: ConnectedPlaylist,
+        localField: 'whatever',
+        foreignField: 'owner',
+        as: 'playlists'
+      })
+    )
 
     // Errors if `foreignField` is not supported by the `from` Model
-    expectError(await ConnectedUser.aggregate().lookup({
-      from: ConnectedPlaylist,
-      localField: 'username',
-      foreignField: 'not_a_playlist_field',
-      as: 'playlists'
-    }))
+    expectError(
+      await ConnectedUser.aggregate().lookup({
+        from: ConnectedPlaylist,
+        localField: 'username',
+        foreignField: 'not_a_playlist_field',
+        as: 'playlists'
+      })
+    )
 
     {
       // Cannot do the `foreignField` checks if `from` is a string
@@ -150,18 +154,18 @@ async function aggregation () {
 
 async function fancyAggregatePipeline () {
   type PlaylistProps = {
-    _id: string,
-    media: string[],
-  };
+    _id: string
+    media: string[]
+  }
   type PlaylistItemProps = {
-    _id: string,
-    media: string,
-    artist: string,
-    title: string,
-  };
+    _id: string
+    media: string
+    artist: string
+    title: string
+  }
   type MediaProps = {
-    _id: string,
-  };
+    _id: string
+  }
   class Playlist extends Model<PlaylistProps> {}
   class PlaylistItem extends Model<PlaylistItemProps> {}
   class Media extends Model<MediaProps> {}
@@ -179,31 +183,29 @@ async function fancyAggregatePipeline () {
     .unwind('items')
     .replaceRoot('items')
     .match({
-      $or: [
-        { artist: 'test' },
-        { title: 'test' },
-      ]
+      $or: [{ artist: 'test' }, { title: 'test' }]
     })
     .facet({
-      count: (input) => input.count('filtered'),
-      items: (input) => input
-        .skip(50)
-        .limit(50)
-        .lookup({
-          from: Media,
-          localField: 'media',
-          foreignField: '_id',
-          as: 'media'
-        })
-        .unwind('media')
+      count: input => input.count('filtered'),
+      items: input =>
+        input
+          .skip(50)
+          .limit(50)
+          .lookup({
+            from: Media,
+            localField: 'media',
+            foreignField: '_id',
+            as: 'media'
+          })
+          .unwind('media')
     })
 
   expectType<number>(result[0].count[0].filtered)
 
   const firstItem: {
-    _id: string,
-    artist: string,
-    title: string,
-    media: { _id: string },
-  } = result[0].items[0];
+    _id: string
+    artist: string
+    title: string
+    media: { _id: string }
+  } = result[0].items[0]
 }
