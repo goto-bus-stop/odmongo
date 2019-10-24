@@ -59,7 +59,7 @@ export class Model<TFields = DefaultSchema> {
   // TModelClass can be _any_ class type in theory, but since it's inferred from the `this` type,
   // it will be a model class in all typical uses.
   static findById<TModelClass extends ModelStatic>(this: TModelClass, id: ObjectId): Promise<InstanceType<TModelClass>>;
-  static find<TModelClass extends ModelStatic>(this: TModelClass, query?: PlainObject): QueryBuilder<InstanceType<TModelClass>>;
+  static find<TModelClass extends ModelStatic>(this: TModelClass, query?: PlainObject): Query<InstanceType<TModelClass>>;
   static aggregate<TModelClass extends ModelStatic>(this: TModelClass, stages?: PlainObject[]): AggregateBuilder<ModelFields<TModelClass>>;
   static hydrate<TModelClass extends ModelStatic>(this: TModelClass, fields: ModelFields<TModelClass>): InstanceType<TModelClass>;
   static hydrateAll<TModelClass extends ModelStatic>(this: TModelClass, documents: ModelFields<TModelClass>[]): InstanceType<TModelClass>[];
@@ -69,7 +69,7 @@ export class Model<TFields = DefaultSchema> {
   static set collection(name: string);
   static get collection(): string;
 
-  static QueryBuilder: typeof QueryBuilder;
+  static QueryBuilder: typeof Query;
   static AggregateBuilder: typeof AggregateBuilder;
 }
 
@@ -170,7 +170,7 @@ export class AggregateBuilder<TResult extends object> implements AsyncIterable<T
   addFields<TFields extends AddFieldsOptions>(fields: TFields): AggregateBuilder<ApplyFields<TResult, TFields>>;
   count<F extends string>(fieldName: F): AggregateBuilder<ApplyCount<F>>;
   group(fields: object): this;
-  match(query: QueryBuilder<Model<TResult>> | object): this;
+  match(query: QueryBuilder<TResult> | object): this;
   project<TProjection extends ProjectOptions<TResult>>(projection: TProjection): AggregateBuilder<ApplyProjection<TResult, TProjection>>; // TODO can we determine this in some cases?
   skip(n: number): this;
   limit(n: number): this;
@@ -199,25 +199,33 @@ export class AggregateIterator<TResult extends object> implements AsyncIterator<
   catch<TOk>(fail: (err: Error) => Promise<TOk> | TOk): Promise<TOk | TResult[]>;
 }
 
-export class QueryBuilder<TResult extends Model> implements AsyncIterable<TResult> {
+export class QueryBuilder<TResult extends object> {
   constructor(query?: object);
-  _model<TNewResult extends Model>(model: TNewResult): QueryBuilder<TNewResult>;
   where(query: object): this;
-  eq<F extends keyof TResult["fields"]>(field: F, val: TResult["fields"][F]): this;
-  neq<F extends keyof TResult["fields"]>(field: F, val: TResult["fields"][F]): this;
-  gt<F extends keyof TResult["fields"]>(field: F, val: TResult["fields"][F]): this;
-  gte<F extends keyof TResult["fields"]>(field: F, val: TResult["fields"][F]): this;
-  lt<F extends keyof TResult["fields"]>(field: F, val: TResult["fields"][F]): this;
-  lte<F extends keyof TResult["fields"]>(field: F, val: TResult["fields"][F]): this;
+  eq<F extends keyof TResult>(field: F, val: TResult[F]): this;
+  neq<F extends keyof TResult>(field: F, val: TResult[F]): this;
+  gt<F extends keyof TResult>(field: F, val: TResult[F]): this;
+  gte<F extends keyof TResult>(field: F, val: TResult[F]): this;
+  lt<F extends keyof TResult>(field: F, val: TResult[F]): this;
+  lte<F extends keyof TResult>(field: F, val: TResult[F]): this;
   and(branches: (QueryBuilder<TResult> | PlainObject)[]): this;
   or(branches: (QueryBuilder<TResult> | PlainObject)[]): this;
-  select<F extends keyof TResult["fields"]>(...fields: (F | F[])[]): this;
+  select<F extends keyof TResult>(...fields: (F | F[])[]): this;
   toJSON(): object;
-  execute(options?: mongodb.FindOneOptions): QueryIterator<TResult>;
-  [Symbol.asyncIterator](): QueryIterator<TResult>;
+}
 
-  then<TOk>(success: (models: TResult[]) => Promise<TOk> | TOk, fail?: (err: Error) => Promise<TOk> | TOk): Promise<TOk>;
-  catch<TOk>(fail: (err: Error) => Promise<TOk> | TOk): Promise<TOk | TResult[]>;
+export class Query<TModel extends Model>
+  extends QueryBuilder<TModel["fields"]>
+  implements AsyncIterable<TModel>
+{
+  constructor(query?: object);
+  _model<TNewResult extends Model>(model: TNewResult): Query<TNewResult>;
+  toJSON(): object;
+  execute(options?: mongodb.FindOneOptions): QueryIterator<TModel>;
+  [Symbol.asyncIterator](): QueryIterator<TModel>;
+
+  then<TOk>(success: (models: TModel[]) => Promise<TOk> | TOk, fail?: (err: Error) => Promise<TOk> | TOk): Promise<TOk>;
+  catch<TOk>(fail: (err: Error) => Promise<TOk> | TOk): Promise<TOk | TModel[]>;
 }
 
 export class QueryIterator<TResult extends Model> implements AsyncIterator<TResult> {
