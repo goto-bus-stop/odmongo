@@ -146,7 +146,7 @@ async function aggregation () {
         as: 'playlists'
       })
       expectType<string>(result[0].username)
-      expectType<{ [key: string]: any }[]>(result[0].playlists)
+      expectType<{ [key: string]: unknown }[]>(result[0].playlists)
       expectError(result[0].somethingElse)
     }
   }

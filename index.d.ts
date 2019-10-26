@@ -12,6 +12,8 @@ type ObjectId = string | mongodb.ObjectId
 
 type PlainObject = { [name: string]: any }
 
+type UnknownObject = { [name: string]: unknown }
+
 type DefaultSchema = PlainObject
 
 // type helper: `T extends ModelStatic` ensures `T` is a class that can be instantiated.
@@ -150,7 +152,7 @@ type PipelineLookupOptions<
   as: OutputName
   let: object
   // TODO accept `pipeline: (input) => input.etc()`?
-  pipeline: JoinCollection extends ModelStatic ? PlainObject[] : PlainObject[]
+  pipeline: JoinCollection extends ModelStatic ? UnknownObject[] : UnknownObject[]
 }
 
 type LookupOptions<
@@ -169,7 +171,7 @@ type ApplySimpleLookup<
   {
     [key in OutputName]: JoinCollection extends ModelStatic
       ? ModelFields<JoinCollection>[]
-      : PlainObject[]
+      : UnknownObject[]
   }
 
 type ApplyUnwind<Input extends object, Field extends keyof Input> = Omit<
@@ -235,7 +237,7 @@ export class AggregateBuilder<TResult extends object>
   replaceRoot<F extends keyof TResult>(
     fieldName: F
   ): AggregateBuilder<TResult[F] extends object ? TResult[F] : object>
-  toJSON(): PlainObject[]
+  toJSON(): UnknownObject[]
   execute(
     options?: mongodb.CollectionAggregationOptions
   ): AggregateIterator<TResult>
@@ -273,14 +275,13 @@ export class QueryBuilder<TResult extends object> {
   and(branches: (QueryBuilder<TResult> | PlainObject)[]): this
   or(branches: (QueryBuilder<TResult> | PlainObject)[]): this
   select<F extends keyof TResult>(...fields: (F | F[])[]): this
-  toJSON(): object
+  toJSON(): UnknownObject
 }
 
 export class Query<TModel extends Model> extends QueryBuilder<TModel['fields']>
   implements AsyncIterable<TModel> {
   constructor(query?: object)
   _model<TNewResult extends Model>(model: TNewResult): Query<TNewResult>
-  toJSON(): object
   execute(options?: mongodb.FindOneOptions): QueryIterator<TModel>
   [Symbol.asyncIterator](): QueryIterator<TModel>
 
