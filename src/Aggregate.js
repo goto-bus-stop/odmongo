@@ -1,4 +1,5 @@
 const { promisify } = require('util')
+const QueryBuilder = require('./Query.js').Builder
 
 const kStages = Symbol('stages')
 const kModel = Symbol('model')
@@ -7,7 +8,7 @@ const kNext = Symbol('get next result')
 
 const kAsyncIterator = Symbol.asyncIterator
 
-function toJSON () {
+function toJSON (obj) {
   return obj.toJSON ? obj.toJSON() : obj
 }
 
@@ -27,6 +28,11 @@ module.exports = class AggregateBuilder {
     return this
   }
 
+  addFields (spec) {
+    if (typeof spec !== 'object') throw new Error('odmongo.aggregate.addFields: must be an object')
+    return this.push({ $addFields: spec })
+  }
+
   count (fieldName) {
     return this.push({ $count: fieldName })
   }
@@ -42,6 +48,9 @@ module.exports = class AggregateBuilder {
   }
 
   match (query) {
+    if (typeof query === 'function') {
+      query = query(new QueryBuilder())
+    }
     if (typeof query !== 'object') throw new Error('odmongo.aggregate.match: must be a query object')
     return this.push({ $match: toJSON(query) })
   }
@@ -66,6 +75,51 @@ module.exports = class AggregateBuilder {
     return this.push({ $unwind: spec })
   }
 
+  lookup (spec) {
+    if (typeof spec !== 'object') throw new Error('odmongo.aggregate.lookup: must be an object')
+    const from = typeof spec.from === 'function' ? spec.from.collection : spec.from
+
+    if (spec.localField) {
+      const { localField, foreignField, as } = spec
+      return this.push({
+        $lookup: { from, localField, foreignField, as }
+      })
+    } else {
+      return this.push({
+        $lookup: {
+          from,
+          let: spec.let,
+          pipeline: spec.pipeline instanceof AggregateBuilder ? spec.pipeline.toJSON() : spec.pipeline,
+          as: spec.as
+        }
+      })
+    }
+  }
+
+  facet (spec) {
+    if (typeof spec !== 'object') throw new Error('odmongo.aggregate.facet: must be a string or an object')
+
+    const facets = {}
+    for (const [outputName, pipeline] of Object.entries(spec)) {
+      // this is mostly for typescript, so that we can inject the 'base' type, which is technically a lie!
+      if (typeof pipeline === 'function') {
+        const newPipeline = pipeline(new AggregateBuilder()._model(this[kModel]))
+        if (!(newPipeline instanceof AggregateBuilder)) {
+          throw new Error('odmongo.aggregate.facet: must return an AggregateBuilder from function facet `' + outputName + '`')
+        }
+        facets[outputName] = newPipeline.toJSON()
+      } else if (pipeline instanceof AggregateBuilder) {
+        facets[outputName] = pipeline.toJSON()
+      } else if (Array.isArray(pipeline)) {
+        facets[outputName] = pipeline
+      } else {
+        throw new Error('odmongo.aggregate.facet: the `' + outputName + '` pipeline must be an array or an AggregateBuilder, got ' + typeof pipeline)
+      }
+    }
+
+    return this.push({ $facet: facets })
+  }
+
   toJSON () {
     return this[kStages]
   }
@@ -88,6 +142,7 @@ module.exports = class AggregateBuilder {
   then (success, fail) {
     return this.execute().then(success, fail)
   }
+
   catch (fail) {
     return this.execute().catch(fail)
   }
@@ -108,6 +163,7 @@ class AggregateIterator {
     const value = await this[kNext]()
     return { value, done: value === null }
   }
+
   [kAsyncIterator] () {
     return this
   }
@@ -118,6 +174,7 @@ class AggregateIterator {
     const toArray = promisify(cursor.toArray.bind(cursor))
     return toArray().then(success, fail)
   }
+
   catch (fail) {
     return this.then(null, fail)
   }

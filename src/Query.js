@@ -18,14 +18,12 @@ function flatten (arr) {
   return arr.reduce((acc, item) => acc.concat(item), [])
 }
 
-module.exports = class QueryBuilder {
+/**
+ * Abstract query builder.
+ */
+class QueryBuilder {
   constructor (query = {}) {
     this[kQuery] = query
-  }
-
-  _model (model) {
-    this[kModel] = model
-    return this
   }
 
   where (query) {
@@ -36,6 +34,7 @@ module.exports = class QueryBuilder {
   eq (field, val) {
     return this.where({ [field]: { $eq: val } })
   }
+
   neq (field, val) {
     return this.where({ [field]: { $neq: val } })
   }
@@ -43,6 +42,7 @@ module.exports = class QueryBuilder {
   gt (field, val) {
     return this.where({ [field]: { $gt: val } })
   }
+
   gte (field, val) {
     return this.where({ [field]: { $gte: val } })
   }
@@ -50,6 +50,7 @@ module.exports = class QueryBuilder {
   lt (field, val) {
     return this.where({ [field]: { $lt: val } })
   }
+
   lte (field, val) {
     return this.where({ [field]: { $lte: val } })
   }
@@ -70,6 +71,13 @@ module.exports = class QueryBuilder {
   toJSON () {
     return this[kQuery]
   }
+}
+
+class Query extends QueryBuilder {
+  _model (model) {
+    this[kModel] = model
+    return this
+  }
 
   execute (options = {}) {
     const query = this.toJSON()
@@ -89,6 +97,7 @@ module.exports = class QueryBuilder {
   then (success, fail) {
     return this.execute().then(success, fail)
   }
+
   catch (fail) {
     return this.execute().catch(fail)
   }
@@ -113,6 +122,7 @@ class QueryIterator {
       done: value === null
     }
   }
+
   [kAsyncIterator] () {
     return this
   }
@@ -125,7 +135,11 @@ class QueryIterator {
       .then((docs) => this[kModel].hydrateAll(docs))
       .then(success, fail)
   }
+
   catch (fail) {
     return this.then(null, fail)
   }
 }
+
+Query.Builder = QueryBuilder
+module.exports = Query

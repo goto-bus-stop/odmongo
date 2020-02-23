@@ -1,4 +1,4 @@
-const { parse } = require('url')
+const { URL } = require('url')
 const { MongoClient } = require('mongodb')
 
 const kClientFactory = Symbol('client factory')
@@ -23,14 +23,12 @@ class Connection {
     if (!this.client) {
       this.client = await this[kClientFactory].connect(url, opts)
     }
-    const { pathname } = parse(url)
+    const { pathname } = new URL(url)
     this.db = this.client.db(pathname.replace(/^\//, ''))
   }
 
-  define(classes) {
-    const models = {}
-    for (const name of Object.keys(classes)) {
-      const BaseModel = classes[name]
+  define (classes) {
+    for (const [name, BaseModel] of Object.entries(classes)) {
       this.models[name] = makeConnectedModel(BaseModel, name, this)
     }
   }
@@ -45,7 +43,7 @@ function makeConnectedModel (BaseModel, name, connection) {
   const Connected = vm.runInNewContext(`
     class ${name} extends Model {}
     ${name}
-  `, { Model })
+  `, { Model: BaseModel })
 
   Connected.connection = connection
   Connected.collection = BaseModel.collection

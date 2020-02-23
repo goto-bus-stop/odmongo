@@ -6,6 +6,10 @@ const QueryBuilder = require('./Query.js')
 const kConnection = Symbol('connection')
 const kCollection = Symbol('collection')
 
+function has (object, property) {
+  return Object.prototype.hasOwnProperty.call(object, property)
+}
+
 class Model {
   constructor (fields = {}) {
     this.fields = fields
@@ -165,7 +169,7 @@ class Model {
    * Get the collection name used by this model.
    */
   static get collection () {
-    if (!this.hasOwnProperty(kCollection)) {
+    if (!has(this, kCollection)) {
       const name = this.name || 'Model'
       throw new Error(`odmongo: No collection was configured. Do \`${name}.collection = 'collection_name'\` before using any models.`)
     }
