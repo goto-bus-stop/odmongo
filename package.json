@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/goto-bus-stop/odmongo#readme",
   "devDependencies": {
-    "@hapi/joi": "^16.1.7",
+    "@hapi/joi": "^17.1.0",
     "standard": "^14.3.1",
     "tape": "^4.11.0"
   },
