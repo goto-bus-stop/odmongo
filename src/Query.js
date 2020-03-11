@@ -23,6 +23,7 @@ function flatten (arr) {
  */
 class QueryBuilder {
   constructor (query = {}) {
+    this[kFields] = null
     this[kQuery] = query
   }
 
@@ -70,6 +71,10 @@ class QueryBuilder {
 
   toJSON () {
     return this[kQuery]
+  }
+
+  getFields () {
+    return this[kFields]
   }
 }
 
