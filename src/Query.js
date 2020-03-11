@@ -4,7 +4,7 @@ const kQuery = Symbol('query')
 const kModel = Symbol('model')
 const kCursor = Symbol('cursor')
 const kNext = Symbol('get next result')
-const kFields = Symbol('select fields')
+const kOptions = Symbol('query options')
 
 const kAsyncIterator = Symbol.asyncIterator
 
@@ -23,8 +23,8 @@ function flatten (arr) {
  */
 class QueryBuilder {
   constructor (query = {}) {
-    this[kFields] = null
     this[kQuery] = query
+    this[kOptions] = {}
   }
 
   where (query) {
@@ -65,7 +65,25 @@ class QueryBuilder {
   }
 
   select (...fieldNames) {
-    this[kFields] = flatten(fieldNames)
+    this[kOptions].projection = flatten(fieldNames)
+    return this
+  }
+
+  skip (n) {
+    if (typeof n !== 'number' || n < 0) throw new Error('odmongo.query.skip: must be a positive integer')
+    this[kOptions].skip = n
+    return this
+  }
+
+  limit (n) {
+    if (typeof n !== 'number' || n < 0) throw new Error('odmongo.query.limit: must be a positive integer')
+    this[kOptions].limit = n
+    return this
+  }
+
+  sort (sort) {
+    // TODO merge this maybe
+    this[kOptions].sort = sort
     return this
   }
 
@@ -73,8 +91,8 @@ class QueryBuilder {
     return this[kQuery]
   }
 
-  getFields () {
-    return this[kFields]
+  getOptions () {
+    return this[kOptions]
   }
 }
 
@@ -84,10 +102,16 @@ class Query extends QueryBuilder {
     return this
   }
 
+  count (options = {}) {
+    const query = this.toJSON()
+    return this[kModel].getCollection()
+      .countDocuments(query, merge({}, this.getOptions(), options))
+  }
+
   execute (options = {}) {
     const query = this.toJSON()
     const cursor = this[kModel].getCollection()
-      .find(query, options)
+      .find(query, merge({}, this.getOptions(), options))
 
     return new QueryIterator(this[kModel], cursor)
   }
