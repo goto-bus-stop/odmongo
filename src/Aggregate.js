@@ -29,7 +29,7 @@ module.exports = class AggregateBuilder {
   }
 
   addFields (spec) {
-    if (typeof spec !== 'object') throw new Error('odmongo.aggregate.addFields: must be an object')
+    if (typeof spec !== 'object') throw new TypeError('odmongo.aggregate.addFields: must be an object')
     return this.push({ $addFields: spec })
   }
 
@@ -51,12 +51,12 @@ module.exports = class AggregateBuilder {
     if (typeof query === 'function') {
       query = query(new QueryBuilder())
     }
-    if (typeof query !== 'object') throw new Error('odmongo.aggregate.match: must be a query object')
+    if (typeof query !== 'object') throw new TypeError('odmongo.aggregate.match: must be a query object')
     return this.push({ $match: toJSON(query) })
   }
 
   project (projection) {
-    if (typeof projection !== 'object') throw new Error('odmongo.aggregate.project: must be an object')
+    if (typeof projection !== 'object') throw new TypeError('odmongo.aggregate.project: must be an object')
     return this.push({ $project: projection })
   }
 
@@ -66,17 +66,17 @@ module.exports = class AggregateBuilder {
   }
 
   sort (fields) {
-    if (typeof fields !== 'object') throw new Error('odmongo.aggregate.sort: must be an object')
+    if (typeof fields !== 'object') throw new TypeError('odmongo.aggregate.sort: must be an object')
     return this.push({ $sort: fields })
   }
 
   unwind (spec) {
-    if (typeof spec !== 'string' && typeof spec !== 'object') throw new Error('odmongo.aggregate.unwind: must be a string or an object')
+    if (typeof spec !== 'string' && typeof spec !== 'object') throw new TypeError('odmongo.aggregate.unwind: must be a string or an object')
     return this.push({ $unwind: spec })
   }
 
   lookup (spec) {
-    if (typeof spec !== 'object') throw new Error('odmongo.aggregate.lookup: must be an object')
+    if (typeof spec !== 'object') throw new TypeError('odmongo.aggregate.lookup: must be an object')
     const from = typeof spec.from === 'function' ? spec.from.collection : spec.from
 
     if (spec.localField) {
@@ -97,7 +97,7 @@ module.exports = class AggregateBuilder {
   }
 
   facet (spec) {
-    if (typeof spec !== 'object') throw new Error('odmongo.aggregate.facet: must be a string or an object')
+    if (typeof spec !== 'object') throw new TypeError('odmongo.aggregate.facet: must be a string or an object')
 
     const facets = {}
     for (const [outputName, pipeline] of Object.entries(spec)) {
@@ -105,7 +105,7 @@ module.exports = class AggregateBuilder {
       if (typeof pipeline === 'function') {
         const newPipeline = pipeline(new AggregateBuilder()._model(this[kModel]))
         if (!(newPipeline instanceof AggregateBuilder)) {
-          throw new Error('odmongo.aggregate.facet: must return an AggregateBuilder from function facet `' + outputName + '`')
+          throw new TypeError('odmongo.aggregate.facet: must return an AggregateBuilder from function facet `' + outputName + '`')
         }
         facets[outputName] = newPipeline.toJSON()
       } else if (pipeline instanceof AggregateBuilder) {
@@ -113,7 +113,7 @@ module.exports = class AggregateBuilder {
       } else if (Array.isArray(pipeline)) {
         facets[outputName] = pipeline
       } else {
-        throw new Error('odmongo.aggregate.facet: the `' + outputName + '` pipeline must be an array or an AggregateBuilder, got ' + typeof pipeline)
+        throw new TypeError('odmongo.aggregate.facet: the `' + outputName + '` pipeline must be an array or an AggregateBuilder, got ' + typeof pipeline)
       }
     }
 
