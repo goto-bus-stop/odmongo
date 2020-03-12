@@ -56,3 +56,47 @@ test('QueryBuilder stacked comparison operators', { skip: true }, (t) => {
     { field: { $eq: 'value', $gt: 0, $lt: 10 } })
   t.end()
 })
+
+test('QueryBuilder sorting options', (t) => {
+  t.throws(() => new Query.Builder().sort('field'))
+  t.throws(() => new Query.Builder().sort(null))
+
+  t.deepEqual(
+    new Query.Builder()
+      .sort({ field: 1 })
+      .getOptions(),
+    { sort: { field: 1 } })
+  t.deepEqual(
+    new Query.Builder()
+      .sort({ field: 1 })
+      .sort({ secondField: -1 })
+      .sort({ field: 0 })
+      .getOptions(),
+    { sort: { field: 0, secondField: -1 } })
+  t.end()
+})
+
+test('QueryBuilder pagination options', (t) => {
+  t.throws(() => new Query.Builder().skip('not a number'))
+  t.throws(() => new Query.Builder().limit('not a number'))
+  t.throws(() => new Query.Builder().skip(-1))
+  t.throws(() => new Query.Builder().limit(-1))
+
+  t.deepEqual(
+    new Query.Builder()
+      .skip(1)
+      .getOptions(),
+    { skip: 1 })
+  t.deepEqual(
+    new Query.Builder()
+      .limit(10)
+      .getOptions(),
+    { limit: 10 })
+  t.deepEqual(
+    new Query.Builder()
+      .skip(100)
+      .limit(10)
+      .getOptions(),
+    { skip: 100, limit: 10 })
+  t.end()
+})

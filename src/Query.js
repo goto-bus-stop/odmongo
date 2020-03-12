@@ -82,8 +82,12 @@ class QueryBuilder {
   }
 
   sort (sort) {
-    // TODO merge this maybe
-    this[kOptions].sort = sort
+    if (typeof sort !== 'object' || sort === null || Array.isArray(sort)) throw new TypeError('odmongo.query.sort: must be a plain object')
+    if (this[kOptions].sort) {
+      merge(this[kOptions].sort, sort)
+    } else {
+      this[kOptions].sort = sort
+    }
     return this
   }
 
