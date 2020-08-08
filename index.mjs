@@ -1,5 +1,4 @@
-import Connection from './src/Connection.js'
-import Model from './src/Model.js'
+import Connection from 'odmongo/Connection'
+import Model from 'odmongo/Model'
 
-export default { Connection, Model }
 export { Connection, Model }
