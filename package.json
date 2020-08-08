@@ -9,7 +9,9 @@
       "default": "./index.js"
     }, "./index.js"],
     "./Connection": "./src/Connection.js",
-    "./Model": "./src/Model.js"
+    "./Model": "./src/Model.js",
+    "./Query": "./src/Query.js",
+    "./Aggregate": "./src/Aggregate.js"
   },
   "type": "commonjs",
   "engines": {
