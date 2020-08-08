@@ -8,10 +8,10 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [8.x, 9.x, 10.x, 11.x, 12.x]
+        node-version: [10.x, 12.x, 14.x]
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
@@ -22,15 +22,3 @@ jobs:
       run: npm test
       env:
         CI: true
-
-  lint:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v1
-    - name: Linting
-      uses: goto-bus-stop/standard-action@v1.0.0
-      with:
-        annotate: true
-      env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
