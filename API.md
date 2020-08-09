@@ -48,9 +48,13 @@ Get a model that was registered using [`conn.define()`](#connection-define).
 
 ## Model
 
-### `class extends Model {}`
+### `class MyModel extends Model {}`
 
-Create a new Model class.
+Create a new Model class. To customise its behaviour, override these properties and methods:
+
+- [`Model.connection`](#model-set-connection)
+- [`Model.collection`](#model-set-collection)
+- [`Model.validate`](#model-validate)
 
 <a id="model-set-connection"></a>
 ### `Model.connection = connection`
@@ -109,6 +113,7 @@ used as the initial query.
 
 Find a single model by its ID.
 
+<a id="model-fields"></a>
 ### `model.fields`
 
 An object containing the fields and values of a model instance. This is the way
@@ -121,17 +126,25 @@ user.fields.visits += 1
 await user.save()
 ```
 
+<a id="model-save"></a>
 ### `await model.save()`
 
 Save a model. If the model is new, it is inserted into the database. Else, the
 existing document is updated.
 
+<a id="model-validate"></a>
 ### `async validate() {}`
 
 A validation function for models. You can use this to implement a schema similar
 to the ones offered by libraries like Mongoose.
 
 `validate()` is called before any model is saved.
+
+The return value of this function is ignored. Throw an error to fail the
+validation.
+
+You can update `this.fields` in this function to apply default values or to
+normalise data.
 
 Use any validation mechanism you like, [`joi`](https://github.com/hapijs/joi)
 is a good one:
@@ -147,7 +160,7 @@ const schema = joi.object({
 
 class User extends Model {
   async validate () {
-    return joi.validate(this.fields, schema, { allowUnknown: true })
+    await joi.validate(this.fields, schema, { allowUnknown: true })
   }
 }
 ```
@@ -159,6 +172,10 @@ class User extends Model {
 
 Add restrictions to the query. See the [MongoDB documentation](https://docs.mongodb.com/manual/reference/operator/query/)
 for available operators.
+
+> It's better to use the specific methods documented below, because they will
+> throw errors early if types are wrong. This exists as a fallback in case
+> something you need is not implemented in `odmongo`.
 
 ```js
 query.where({ email: { $regex: '.*@gmail\\.com' } })
@@ -180,6 +197,7 @@ Add a field restriction to the query.
 - `lt` - Field must be less than `value`.
 - `lte` - Field must be less than or equal to `value`.
 
+<a id="querybuilder-execute"></a>
 ### `query.execute(options)`
 
 Execute the query. Returns a Promise-like object that resolves with an array
@@ -196,6 +214,7 @@ for await (const item of User.find().execute()) { }
 QueryBuilder object directly implicitly calls `.execute()`, so most of the time
 you do not have to do it manually.
 
+<a id="queryiterator-unwrap"></a>
 ### `query.execute(options).unwrap()`
 
 Return the [MongoDB Cursor](https://mongodb.github.io/node-mongodb-native/3.1/api/Cursor.html)
@@ -227,6 +246,7 @@ for await (const user of User.find()) {
 
 ## AggregateBuilder
 
+<a id="aggregatebuilder-push"></a>
 ### `aggregate.push(stage)`
 
 Add an [aggregation stage](https://docs.mongodb.com/manual/reference/operator/aggregation-pipeline/).
@@ -244,6 +264,7 @@ aggregate.push({
 })
 ```
 
+<a id="aggregateiterator-unwrap"></a>
 ### `aggregate.execute(options).unwrap()`
 
 Return the [MongoDB AggregationCursor](https://mongodb.github.io/node-mongodb-native/3.1/api/AggregationCursor.html)
@@ -256,7 +277,7 @@ not implemented in `odmongo`.
 <a id="aggregate-await"></a>
 ### `await aggregate`
 
-Execute the aggregation. Returns an array of all results.
+Execute the aggregation. This collects all results into an array.
 
 ```js
 const results = await User.aggregate(/* pipeline */)
