@@ -5,6 +5,7 @@ const QueryBuilder = require('./Query.js')
 
 const kConnection = Symbol('connection')
 const kCollection = Symbol('collection')
+const kMarker = Symbol.for('odmongo.model')
 
 function has (object, property) {
   return Object.prototype.hasOwnProperty.call(object, property)
@@ -179,5 +180,6 @@ class Model {
 
 Model.QueryBuilder = QueryBuilder
 Model.AggregateBuilder = AggregateBuilder
+Model[kMarker] = true
 
 module.exports = Model
