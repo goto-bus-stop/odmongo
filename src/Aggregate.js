@@ -5,11 +5,22 @@ const kStages = Symbol('stages')
 const kModel = Symbol('model')
 const kCursor = Symbol('cursor')
 const kNext = Symbol('get next result')
+const kModelMarker = Symbol.for('odmongo.model')
 
 const kAsyncIterator = Symbol.asyncIterator
 
 function toJSON (obj) {
   return obj.toJSON ? obj.toJSON() : obj
+}
+
+function toCollectionName (obj) {
+  if (typeof obj === 'string') {
+    return obj
+  }
+  if (typeof obj === 'function' && obj[kModelMarker]) {
+    return obj.collection
+  }
+  return null
 }
 
 module.exports = class AggregateBuilder {
@@ -77,7 +88,7 @@ module.exports = class AggregateBuilder {
 
   lookup (spec) {
     if (typeof spec !== 'object') throw new TypeError('odmongo.aggregate.lookup: must be an object')
-    const from = typeof spec.from === 'function' ? spec.from.collection : spec.from
+    const from = toCollectionName(spec.from)
 
     if (spec.localField) {
       const { localField, foreignField, as } = spec
@@ -97,7 +108,7 @@ module.exports = class AggregateBuilder {
   }
 
   facet (spec) {
-    if (typeof spec !== 'object') throw new TypeError('odmongo.aggregate.facet: must be a string or an object')
+    if (typeof spec !== 'object') throw new TypeError('odmongo.aggregate.facet: must be an object')
 
     const facets = {}
     for (const [outputName, pipeline] of Object.entries(spec)) {
@@ -118,6 +129,51 @@ module.exports = class AggregateBuilder {
     }
 
     return this.push({ $facet: facets })
+  }
+
+  unionWith (spec) {
+    if (spec == null) throw new TypeError('odmongo.aggregate.unionWith: must be a string or an object')
+
+    // pipeline.unionWith(OtherModel.aggregate())
+    if (spec instanceof AggregateBuilder) {
+      if (spec[kModel] == null) throw new TypeError('odmongo.aggregate.unionWith: when passing an AggregateBuilder, it must have an associated model')
+
+      return this.push({
+        $unionWith: {
+          coll: spec[kModel].collection,
+          pipeline: spec.toJSON()
+        }
+      })
+    }
+
+    // pipeline.unionWith(OtherModel)
+    if (spec[kModelMarker]) {
+      spec = spec.collection
+    }
+
+    // pipeline.unionWith('other_models')
+    if (typeof spec === 'string') {
+      return this.push({ $unionWith: spec })
+    }
+
+    if (typeof spec === 'object') {
+      const coll = toCollectionName(spec.coll)
+      if (!coll) throw new TypeError('odmongo.aggregate.unionWith: collection name must be a string')
+      const $unionWith = { coll }
+
+      // TODO handle function pipeline
+      if (spec.pipeline instanceof AggregateBuilder) {
+        $unionWith.pipeline = spec.pipeline.toJSON()
+      } else if (Array.isArray(spec.pipeline)) {
+        $unionWith.pipeline = spec.pipeline
+      } else {
+        throw new TypeError('odmongo.aggregate.unionWith: pipeline must be an array or a builder')
+      }
+
+      return this.push({ $unionWith })
+    }
+
+    throw new TypeError('odmongo.aggregate.unionWith: must be a string or an object')
   }
 
   toJSON () {
