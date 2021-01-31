@@ -4,10 +4,13 @@
   "description": "Barebones MongoDB ODM.",
   "main": "index",
   "exports": {
-    ".": [{
-      "import": "./index.mjs",
-      "default": "./index.js"
-    }, "./index.js"],
+    ".": [
+      {
+        "import": "./index.mjs",
+        "default": "./index.js"
+      },
+      "./index.js"
+    ],
     "./Connection": "./src/Connection.js",
     "./Model": "./src/Model.js",
     "./Query": "./src/Query.js",
@@ -37,11 +40,11 @@
   },
   "homepage": "https://github.com/goto-bus-stop/odmongo#readme",
   "devDependencies": {
-    "@hapi/joi": "^17.1.0",
-    "standard": "^16.0.0",
-    "tape": "^5.0.0"
+    "@hapi/joi": "^17.1.1",
+    "standard": "^16.0.3",
+    "tape": "^5.1.1"
   },
   "dependencies": {
-    "mongodb": "^3.3.3"
+    "mongodb": "4.0.0-beta.0"
   }
 }
