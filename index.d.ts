@@ -41,7 +41,7 @@ export class Connection<
   define(models: Partial<TModels>): void
 }
 
-export class Model<TFields = DefaultSchema> {
+export abstract class Model<TFields = DefaultSchema> {
   public fields: TFields
 
   constructor(fields?: TFields)
