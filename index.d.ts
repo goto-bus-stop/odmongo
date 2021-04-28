@@ -239,7 +239,7 @@ export class AggregateBuilder<TResult extends object>
   ): AggregateBuilder<TResult[F] extends object ? TResult[F] : object>
   toJSON(): UnknownObject[]
   execute(
-    options?: mongodb.CollectionAggregationOptions
+    options?: mongodb.AggregateOptions
   ): AggregateIterator<TResult>
   [Symbol.asyncIterator](): AggregateIterator<TResult>
 
@@ -282,7 +282,7 @@ export class Query<TModel extends Model> extends QueryBuilder<TModel['fields']>
   implements AsyncIterable<TModel> {
   constructor(query?: object)
   _model<TNewResult extends Model>(model: TNewResult): Query<TNewResult>
-  execute(options?: mongodb.FindOneOptions): QueryIterator<TModel>
+  execute(options?: mongodb.FindOptions): QueryIterator<TModel>
   [Symbol.asyncIterator](): QueryIterator<TModel>
 
   then<TOk>(
@@ -294,7 +294,7 @@ export class Query<TModel extends Model> extends QueryBuilder<TModel['fields']>
 
 export class QueryIterator<TResult extends Model>
   implements AsyncIterator<TResult> {
-  unwrap(): mongodb.Cursor
+  unwrap(): mongodb.FindCursor
 
   next(): Promise<IteratorResult<TResult>>
 
