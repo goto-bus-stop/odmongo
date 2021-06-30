@@ -39,15 +39,15 @@
     "url": "https://github.com/goto-bus-stop/odmongo/issues"
   },
   "homepage": "https://github.com/goto-bus-stop/odmongo#readme",
-  "dependencies": {
-    "mongodb": "4.0.0-beta.3"
-  },
   "devDependencies": {
     "@hapi/joi": "^17.1.1",
     "@types/hapi__joi": "^17.1.6",
     "@types/node": "^15.0.1",
     "standard": "^16.0.3",
-    "tape": "^5.1.1",
+    "tape": "^5.1.1"
     "tsd": "^0.14.0"
+  },
+  "dependencies": {
+    "mongodb": "4.0.0-beta.5"
   }
 }
