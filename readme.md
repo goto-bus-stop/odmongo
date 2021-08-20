@@ -10,8 +10,8 @@ yourself a nice DB library.
 In short:
 
 ```js
-const joi = require('joi')
-const { Connection, Model } = require('odmongo')
+import joi from 'joi'
+import { Connection, Model } from 'odmongo'
 
 // Set up a connection instance
 const connection = new Connection()

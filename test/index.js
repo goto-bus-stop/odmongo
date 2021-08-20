@@ -1,2 +1,2 @@
-require('./model')
-require('./query')
+import './model.js'
+import './query.js'

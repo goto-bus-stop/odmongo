@@ -1,5 +1,4 @@
-const { URL } = require('url')
-const { MongoClient } = require('mongodb')
+import { MongoClient } from 'mongodb'
 
 const kClientFactory = Symbol('client factory')
 
@@ -34,8 +33,6 @@ class Connection {
   }
 }
 
-module.exports = Connection
-
 // Create a subclass of the model with the correct name.
 function makeConnectedModel (BaseModel, name, connection) {
   const vm = require('vm')
@@ -49,3 +46,5 @@ function makeConnectedModel (BaseModel, name, connection) {
   Connected.collection = BaseModel.collection
   return Connected
 }
+
+export default Connection

@@ -66,7 +66,7 @@ Subclasses default to using their superclass's connection, so to make all models
 use a global Connection instance, you can do:
 
 ```js
-const { Model } = require('odmongo')
+import { Model } from 'odmongo'
 Model.connection = myGlobalConnection
 ```
 
@@ -150,7 +150,7 @@ Use any validation mechanism you like, [`joi`](https://github.com/hapijs/joi)
 is a good one:
 
 ```js
-const joi = require('joi')
+import joi from 'joi'
 
 const schema = joi.object({
   username: joi.string()

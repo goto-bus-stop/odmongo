@@ -1,5 +1,5 @@
-const { promisify } = require('util')
-const QueryBuilder = require('./Query.js').Builder
+import { promisify } from 'util'
+import { Builder as QueryBuilder } from './Query.js'
 
 const kStages = Symbol('stages')
 const kModel = Symbol('model')
@@ -23,7 +23,7 @@ function toCollectionName (obj) {
   return null
 }
 
-module.exports = class AggregateBuilder {
+class AggregateBuilder {
   constructor (stages = []) {
     this[kStages] = stages
     this[kModel] = null
@@ -235,3 +235,5 @@ class AggregateIterator {
     return this.then(null, fail)
   }
 }
+
+export default AggregateBuilder

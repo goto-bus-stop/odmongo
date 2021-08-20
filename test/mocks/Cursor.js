@@ -1,4 +1,4 @@
-module.exports = class MockCursor {
+export default class MockCursor {
   constructor (results) {
     this.results = results
   }

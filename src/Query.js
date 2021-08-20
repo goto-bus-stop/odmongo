@@ -1,4 +1,4 @@
-const { promisify } = require('util')
+import { promisify } from 'util'
 
 const kQuery = Symbol('query')
 const kModel = Symbol('model')
@@ -174,5 +174,5 @@ class QueryIterator {
   }
 }
 
-Query.Builder = QueryBuilder
-module.exports = Query
+export default Query
+export { QueryBuilder as Builder }

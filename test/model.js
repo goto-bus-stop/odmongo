@@ -1,7 +1,7 @@
-const test = require('tape')
-const Connection = require('../src/Connection.js')
-const Model = require('../src/Model.js')
-const MockClient = require('./mocks/Client.js')
+import test from 'tape'
+import Connection from '../src/Connection.js'
+import Model from '../src/Model.js'
+import MockClient from './mocks/Client.js'
 // const MockCursor = require('./mocks/Cursor.js')
 
 const fakeClient = {

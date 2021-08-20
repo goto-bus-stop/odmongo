@@ -1,6 +1,6 @@
-const MockCursor = require('./Cursor.js')
+import MockCursor from './Cursor.js'
 
-module.exports = class MockClient {
+export default class MockClient {
   constructor (collections) {
     this.collections = collections
   }

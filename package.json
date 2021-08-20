@@ -3,22 +3,16 @@
   "version": "1.0.0-beta.1",
   "description": "Barebones MongoDB ODM.",
   "main": "index",
+  "type": "module",
   "exports": {
-    ".": [
-      {
-        "import": "./index.mjs",
-        "default": "./index.js"
-      },
-      "./index.js"
-    ],
+    ".": "./index.js",
     "./Connection": "./src/Connection.js",
     "./Model": "./src/Model.js",
     "./Query": "./src/Query.js",
     "./Aggregate": "./src/Aggregate.js"
   },
-  "type": "commonjs",
   "engines": {
-    "node": ">= 10"
+    "node": ">= 12"
   },
   "scripts": {
     "test": "standard && node test"

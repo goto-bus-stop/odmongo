@@ -1,7 +1,7 @@
-const { ObjectId } = require('mongodb')
-const Connection = require('./Connection.js')
-const AggregateBuilder = require('./Aggregate.js')
-const QueryBuilder = require('./Query.js')
+import { ObjectId } from 'mongodb'
+import Connection from './Connection.js'
+import AggregateBuilder from './Aggregate.js'
+import QueryBuilder from './Query.js'
 
 const kConnection = Symbol('connection')
 const kCollection = Symbol('collection')
@@ -182,4 +182,4 @@ Model.QueryBuilder = QueryBuilder
 Model.AggregateBuilder = AggregateBuilder
 Model[kMarker] = true
 
-module.exports = Model
+export default Model
