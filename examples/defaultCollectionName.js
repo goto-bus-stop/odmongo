@@ -9,20 +9,23 @@
  * models.
  */
 
-const BaseModel = require('../').Model
+import { Model as BaseModel } from 'odmongo'
+
+const kCollectionName = Symbol('collection name')
 
 class Model extends BaseModel {
   // Still allow overriding the collection name.
-  static set collection (name) { this._collection = name }
+  static set collection (name) { this[kCollectionName] = name }
   static get collection () {
-    if (this._collection) return this._collection
-
-    // `this.name` is the name of the class.
-    return this.name
-      // UserActivity → userActivity
-      .replace(/^[A-Z]/, (letter) => letter.toLowerCase())
-      // userActivity → user_activity
-      .replace(/([a-z0-9])([A-Z])/g, (_, a, b) => `${a}_${b.toLowerCase()}`)
+    if (this[kCollectionName] == null) {
+      // `this.name` is the name of the class.
+      this[kCollectionName] = this.name
+        // UserActivity → userActivity
+        .replace(/^[A-Z]/, (letter) => letter.toLowerCase())
+        // userActivity → user_activity
+        .replace(/([a-z0-9])([A-Z])/g, (_, a, b) => `${a}_${b.toLowerCase()}`)
+    }
+    return this[kCollectionName]
   }
 }
 
