@@ -3,6 +3,12 @@ import Connection from './Connection.js'
 import AggregateBuilder from './Aggregate.js'
 import QueryBuilder from './Query.js'
 
+/**
+ * @typedef {Record<string, any>} PlainObject
+ * @typedef {Record<string, unknown>} UnknownObject
+ * @typedef {PlainObject} DefaultSchema
+ */
+
 const kConnection = Symbol('connection')
 const kCollection = Symbol('collection')
 const kMarker = Symbol.for('odmongo.model')
@@ -11,7 +17,13 @@ function has (object, property) {
   return Object.prototype.hasOwnProperty.call(object, property)
 }
 
+/**
+ * @template {PlainObject} [TFields = DefaultSchema]
+ */
 class Model {
+  /**
+   * @param {TFields} [fields]
+   */
   constructor (fields = {}) {
     this.fields = fields
     this.isNew = true
@@ -21,20 +33,20 @@ class Model {
    * Get the connection used by the Model.
    */
   get connection () {
-    return this.constructor.connection
+    return /** @type {typeof Model} */ (this.constructor).connection
   }
 
   /**
    * Get the MongoDB collection used by the Model.
    */
   get collection () {
-    return this.constructor.getCollection()
+    return /** @type {typeof Model} */ (this.constructor).getCollection()
   }
 
   /**
    * Validate the Model. Should be overridden by subclasses.
    *
-   * @return {Promise}
+   * @return {Promise<void>}
    */
   validate () {
     return Promise.resolve()
@@ -43,7 +55,7 @@ class Model {
   /**
    * Save the Model in the database.
    *
-   * @return {Promise}
+   * @return {Promise<void>}
    */
   async save () {
     await this.validate()
